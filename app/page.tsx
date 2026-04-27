@@ -5,6 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
 import {
   Bot,
+  Check,
   Code2,
   Compass,
   GraduationCap,
@@ -12,12 +13,16 @@ import {
   LoaderCircle,
   LogOut,
   MessageSquarePlus,
+  MoreHorizontal,
   PanelLeft,
+  Pencil,
   Search,
   Send,
   Sparkles,
   Square,
+  Trash2,
   UserRound,
+  X,
   Zap,
 } from "lucide-react";
 import {
@@ -102,6 +107,14 @@ export default function Page() {
   const [activeConversationId, setActiveConversationId] = useState(chatId);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [openConversationMenuId, setOpenConversationMenuId] = useState<
+    string | null
+  >(null);
+  const [editingConversationId, setEditingConversationId] = useState<
+    string | null
+  >(null);
+  const [editingConversationTitle, setEditingConversationTitle] = useState("");
 
   const transport = useMemo(
     () =>
@@ -187,12 +200,17 @@ export default function Page() {
   }
 
   async function openConversation(conversationId: string) {
+    if (editingConversationId) {
+      return;
+    }
+
     const response = await fetch(
       `/api/conversations?conversationId=${encodeURIComponent(conversationId)}`,
     );
     const data: { messages?: StoredChatMessage[] } = await response.json();
 
     setActiveConversationId(conversationId);
+    setIsSidebarOpen(false);
     setMessages(
       (data.messages ?? []).map((message) => ({
         id: String(message.id),
@@ -208,6 +226,91 @@ export default function Page() {
     setActiveConversationId(newChatId);
     setMessages([]);
     setInput("");
+    setOpenConversationMenuId(null);
+    setEditingConversationId(null);
+    setEditingConversationTitle("");
+    setIsSidebarOpen(false);
+  }
+
+  function startRenamingConversation(conversation: ConversationSummary) {
+    setOpenConversationMenuId(null);
+    setEditingConversationId(conversation.conversationId);
+    setEditingConversationTitle(conversation.title || "Untitled conversation");
+  }
+
+  async function renameActiveConversation(
+    event: React.FormEvent<HTMLFormElement>,
+    conversationId: string,
+  ) {
+    event.preventDefault();
+
+    const title = editingConversationTitle.trim();
+
+    if (!title) {
+      return;
+    }
+
+    setConversations((current) =>
+      current.map((conversation) =>
+        conversation.conversationId === conversationId
+          ? { ...conversation, title }
+          : conversation,
+      ),
+    );
+    setEditingConversationId(null);
+    setEditingConversationTitle("");
+
+    const response = await fetch("/api/conversations", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conversationId, title }),
+    });
+
+    if (!response.ok) {
+      await loadConversations();
+      return;
+    }
+
+    const data: { conversation?: ConversationSummary } = await response.json();
+
+    if (data.conversation) {
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.conversationId === conversationId
+            ? { ...conversation, title: data.conversation!.title }
+            : conversation,
+        ),
+      );
+    }
+  }
+
+  async function deleteSavedConversation(conversationId: string) {
+    setOpenConversationMenuId(null);
+
+    const shouldDelete = window.confirm("Delete this chat?");
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    const response = await fetch(
+      `/api/conversations?conversationId=${encodeURIComponent(conversationId)}`,
+      { method: "DELETE" },
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    setConversations((current) =>
+      current.filter(
+        (conversation) => conversation.conversationId !== conversationId,
+      ),
+    );
+
+    if (activeConversationId === conversationId) {
+      startNewChat();
+    }
   }
 
   async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
@@ -249,7 +352,19 @@ export default function Page() {
 
   return (
     <main className="flex h-dvh overflow-hidden bg-[#0f0b12] text-[var(--foreground)]">
-      <aside className="hidden w-72 shrink-0 flex-col border-r border-[var(--border)] bg-[linear-gradient(165deg,#2a1120_0%,#171018_42%,#110d13_100%)] p-3 md:flex">
+      {isSidebarOpen ? (
+        <button
+          aria-label="Close chat history"
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+          type="button"
+        />
+      ) : null}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col border-r border-[var(--border)] bg-[linear-gradient(165deg,#2a1120_0%,#171018_42%,#110d13_100%)] p-3 transition-transform duration-200 md:static md:z-auto md:translate-x-0 ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
         <div className="flex h-12 items-center justify-between px-2">
           <div className="flex min-w-0 items-center gap-2">
             <Bot aria-hidden="true" className="h-5 w-5 text-pink-200" />
@@ -260,6 +375,7 @@ export default function Page() {
           <button
             aria-label="Toggle sidebar"
             className="inline-flex h-8 w-8 items-center justify-center rounded-[6px] text-[var(--muted)] hover:bg-white/5"
+            onClick={() => setIsSidebarOpen(false)}
             title="Toggle sidebar"
             type="button"
           >
@@ -286,21 +402,131 @@ export default function Page() {
 
         <div className="mt-4 flex-1 space-y-1 overflow-y-auto text-sm text-[var(--muted)]">
           {conversations.length > 0 ? (
-            conversations.map((conversation) => (
-              <button
-                className={`block w-full truncate rounded-[8px] px-3 py-2 text-left transition hover:bg-white/5 hover:text-pink-100 ${
-                  activeConversationId === conversation.conversationId
-                    ? "bg-white/8 text-pink-100"
-                    : ""
-                }`}
-                key={conversation.conversationId}
-                onClick={() => openConversation(conversation.conversationId)}
-                title={conversation.title}
-                type="button"
-              >
-                {conversation.title || "Untitled conversation"}
-              </button>
-            ))
+            conversations.map((conversation) => {
+              const isActive =
+                activeConversationId === conversation.conversationId;
+              const isEditing =
+                editingConversationId === conversation.conversationId;
+              const title = conversation.title || "Untitled conversation";
+
+              return (
+                <div
+                  className={`group relative rounded-[8px] transition hover:bg-white/5 hover:text-pink-100 ${
+                    isActive ? "bg-white/8 text-pink-100" : ""
+                  }`}
+                  key={conversation.conversationId}
+                >
+                  {isEditing ? (
+                    <form
+                      className="flex items-center gap-1 px-2 py-1.5"
+                      onSubmit={(event) =>
+                        renameActiveConversation(
+                          event,
+                          conversation.conversationId,
+                        )
+                      }
+                    >
+                      <input
+                        autoFocus
+                        className="min-w-0 flex-1 rounded-[6px] border border-pink-300/35 bg-[#120e16] px-2 py-1 text-sm text-pink-50 outline-none"
+                        onChange={(event) =>
+                          setEditingConversationTitle(event.target.value)
+                        }
+                        onKeyDown={(event) => {
+                          if (event.key === "Escape") {
+                            setEditingConversationId(null);
+                            setEditingConversationTitle("");
+                          }
+                        }}
+                        value={editingConversationTitle}
+                      />
+                      <button
+                        aria-label="Save chat name"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-pink-100 hover:bg-white/10"
+                        title="Save"
+                        type="submit"
+                      >
+                        <Check aria-hidden="true" className="h-4 w-4" />
+                      </button>
+                      <button
+                        aria-label="Cancel rename"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-[var(--muted)] hover:bg-white/10 hover:text-pink-100"
+                        onClick={() => {
+                          setEditingConversationId(null);
+                          setEditingConversationTitle("");
+                        }}
+                        title="Cancel"
+                        type="button"
+                      >
+                        <X aria-hidden="true" className="h-4 w-4" />
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="flex items-center">
+                      <button
+                        className="min-w-0 flex-1 truncate rounded-[8px] px-3 py-2 pr-1 text-left transition"
+                        onClick={() =>
+                          openConversation(conversation.conversationId)
+                        }
+                        title={title}
+                        type="button"
+                      >
+                        {title}
+                      </button>
+                      <button
+                        aria-label={`Open options for ${title}`}
+                        aria-expanded={
+                          openConversationMenuId === conversation.conversationId
+                        }
+                        className={`mr-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] transition hover:bg-white/10 hover:text-pink-100 ${
+                          openConversationMenuId === conversation.conversationId
+                            ? "bg-white/10 text-pink-100"
+                            : "text-[var(--muted)]"
+                        }`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenConversationMenuId((current) =>
+                            current === conversation.conversationId
+                              ? null
+                              : conversation.conversationId,
+                          );
+                        }}
+                        title="Chat options"
+                        type="button"
+                      >
+                        <MoreHorizontal
+                          aria-hidden="true"
+                          className="h-4 w-4"
+                        />
+                      </button>
+                    </div>
+                  )}
+
+                  {openConversationMenuId === conversation.conversationId ? (
+                    <div className="absolute right-1 top-9 z-20 w-36 rounded-[8px] border border-white/10 bg-[#211927] p-1 shadow-[0_18px_45px_rgba(0,0,0,0.45)]">
+                      <button
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-2 text-left text-sm text-pink-50 hover:bg-white/8"
+                        onClick={() => startRenamingConversation(conversation)}
+                        type="button"
+                      >
+                        <Pencil aria-hidden="true" className="h-4 w-4" />
+                        Rename
+                      </button>
+                      <button
+                        className="flex w-full items-center gap-2 rounded-[6px] px-2 py-2 text-left text-sm text-red-200 hover:bg-red-400/10"
+                        onClick={() =>
+                          deleteSavedConversation(conversation.conversationId)
+                        }
+                        type="button"
+                      >
+                        <Trash2 aria-hidden="true" className="h-4 w-4" />
+                        Delete
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })
           ) : (
             <p className="px-3 py-2 text-xs leading-5 text-[var(--muted)]">
               Saved conversations will appear here.
@@ -337,6 +563,15 @@ export default function Page() {
       <section className="flex min-w-0 flex-1 flex-col rounded-tl-[28px] border-l border-t border-white/5 bg-[radial-gradient(circle_at_50%_0%,rgba(82,54,96,0.4),transparent_34rem),#18131d]">
         <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3 md:hidden">
+            <button
+              aria-label="Open chat history"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-[6px] text-[var(--muted)] hover:bg-white/5"
+              onClick={() => setIsSidebarOpen(true)}
+              title="Open chat history"
+              type="button"
+            >
+              <PanelLeft aria-hidden="true" className="h-5 w-5" />
+            </button>
             <Bot aria-hidden="true" className="h-5 w-5 text-pink-200" />
             <span className="font-semibold">OpenRouter AI Chat</span>
           </div>

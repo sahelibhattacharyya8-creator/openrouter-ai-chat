@@ -65,6 +65,16 @@ async function ensureSchema() {
       ALTER TABLE chat_messages
       ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id) ON DELETE SET NULL
     `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS conversation_titles (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        conversation_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        PRIMARY KEY (user_id, conversation_id)
+      )
+    `;
   })();
 
   await schemaPromise;
@@ -166,13 +176,26 @@ export async function getConversationSummaries(userId: string) {
   await ensureSchema();
 
   const rows = await sql`
-    SELECT DISTINCT ON (conversation_id)
-      conversation_id AS "conversationId",
-      LEFT(content, 80) AS title,
-      created_at AS "updatedAt"
-    FROM chat_messages
-    WHERE user_id = ${userId}
-    ORDER BY conversation_id, created_at DESC
+    WITH latest_messages AS (
+      SELECT DISTINCT ON (conversation_id)
+        conversation_id,
+        content,
+        created_at
+      FROM chat_messages
+      WHERE user_id = ${userId}
+      ORDER BY conversation_id, created_at DESC
+    )
+    SELECT
+      latest_messages.conversation_id AS "conversationId",
+      COALESCE(conversation_titles.title, LEFT(latest_messages.content, 80)) AS title,
+      GREATEST(
+        latest_messages.created_at,
+        COALESCE(conversation_titles.updated_at, latest_messages.created_at)
+      ) AS "updatedAt"
+    FROM latest_messages
+    LEFT JOIN conversation_titles
+      ON conversation_titles.user_id = ${userId}
+      AND conversation_titles.conversation_id = latest_messages.conversation_id
   `;
 
   return (rows as ConversationSummary[]).sort(
@@ -203,4 +226,77 @@ export async function getConversationMessages({
   `;
 
   return rows as StoredChatMessage[];
+}
+
+export async function renameConversation({
+  userId,
+  conversationId,
+  title,
+}: {
+  userId: string;
+  conversationId: string;
+  title: string;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  const trimmedTitle = title.trim();
+
+  if (!trimmedTitle) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const existingRows = await sql`
+    SELECT 1
+    FROM chat_messages
+    WHERE user_id = ${userId}
+      AND conversation_id = ${conversationId}
+    LIMIT 1
+  `;
+
+  if (!existingRows.length) {
+    return null;
+  }
+
+  const rows = await sql`
+    INSERT INTO conversation_titles (user_id, conversation_id, title, updated_at)
+    VALUES (${userId}, ${conversationId}, ${trimmedTitle}, NOW())
+    ON CONFLICT (user_id, conversation_id)
+    DO UPDATE SET title = EXCLUDED.title, updated_at = NOW()
+    RETURNING conversation_id AS "conversationId", title, updated_at AS "updatedAt"
+  `;
+
+  return rows[0] as ConversationSummary;
+}
+
+export async function deleteConversation({
+  userId,
+  conversationId,
+}: {
+  userId: string;
+  conversationId: string;
+}) {
+  if (!sql) {
+    return 0;
+  }
+
+  await ensureSchema();
+
+  await sql`
+    DELETE FROM conversation_titles
+    WHERE user_id = ${userId}
+      AND conversation_id = ${conversationId}
+  `;
+
+  const rows = await sql`
+    DELETE FROM chat_messages
+    WHERE user_id = ${userId}
+      AND conversation_id = ${conversationId}
+    RETURNING id
+  `;
+
+  return rows.length;
 }
