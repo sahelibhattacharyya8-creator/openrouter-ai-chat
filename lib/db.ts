@@ -14,6 +14,20 @@ export type User = {
   name: string | null;
 };
 
+export type ConversationSummary = {
+  conversationId: string;
+  title: string;
+  updatedAt: string;
+};
+
+export type StoredChatMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  model: string;
+  createdAt: string;
+};
+
 const databaseUrl = process.env.DATABASE_URL;
 const sql = databaseUrl ? neon(databaseUrl) : null;
 
@@ -142,4 +156,51 @@ export async function saveChatMessage(message: ChatMessageInput) {
   } catch (error) {
     console.error("Failed to save chat message", error);
   }
+}
+
+export async function getConversationSummaries(userId: string) {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT DISTINCT ON (conversation_id)
+      conversation_id AS "conversationId",
+      LEFT(content, 80) AS title,
+      created_at AS "updatedAt"
+    FROM chat_messages
+    WHERE user_id = ${userId}
+    ORDER BY conversation_id, created_at DESC
+  `;
+
+  return (rows as ConversationSummary[]).sort(
+    (a, b) =>
+      new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
+}
+
+export async function getConversationMessages({
+  userId,
+  conversationId,
+}: {
+  userId: string;
+  conversationId: string;
+}) {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT id, role, content, model, created_at AS "createdAt"
+    FROM chat_messages
+    WHERE user_id = ${userId}
+      AND conversation_id = ${conversationId}
+    ORDER BY created_at ASC, id ASC
+  `;
+
+  return rows as StoredChatMessage[];
 }

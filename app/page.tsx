@@ -74,10 +74,22 @@ type AuthUser = {
   name: string | null;
 };
 
+type ConversationSummary = {
+  conversationId: string;
+  title: string;
+  updatedAt: string;
+};
+
+type StoredChatMessage = {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+};
+
 export default function Page() {
   const conversationRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
-  const [chatId] = useState(() => crypto.randomUUID());
+  const [chatId, setChatId] = useState(() => crypto.randomUUID());
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
   const [authFirstName, setAuthFirstName] = useState("");
@@ -86,6 +98,8 @@ export default function Page() {
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState(chatId);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
 
@@ -93,12 +107,12 @@ export default function Page() {
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { chatId, model },
+        body: { chatId: activeConversationId, model },
       }),
-    [chatId, model],
+    [activeConversationId, model],
   );
 
-  const { messages, sendMessage, status, stop, error } = useChat({
+  const { messages, setMessages, sendMessage, status, stop, error } = useChat({
     transport,
   });
 
@@ -143,6 +157,21 @@ export default function Page() {
     loadUser();
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      setConversations([]);
+      return;
+    }
+
+    loadConversations();
+  }, [user]);
+
+  async function loadConversations() {
+    const response = await fetch("/api/conversations");
+    const data = await response.json();
+    setConversations(data.conversations ?? []);
+  }
+
   function submitMessage(text = input) {
     const trimmed = text.trim();
 
@@ -153,6 +182,31 @@ export default function Page() {
     sendMessage({
       parts: [{ type: "text", text: trimmed }],
     });
+    setInput("");
+    window.setTimeout(loadConversations, 1500);
+  }
+
+  async function openConversation(conversationId: string) {
+    const response = await fetch(
+      `/api/conversations?conversationId=${encodeURIComponent(conversationId)}`,
+    );
+    const data: { messages?: StoredChatMessage[] } = await response.json();
+
+    setActiveConversationId(conversationId);
+    setMessages(
+      (data.messages ?? []).map((message) => ({
+        id: String(message.id),
+        role: message.role,
+        parts: [{ type: "text", text: message.content }],
+      })),
+    );
+  }
+
+  function startNewChat() {
+    const newChatId = crypto.randomUUID();
+    setChatId(newChatId);
+    setActiveConversationId(newChatId);
+    setMessages([]);
     setInput("");
   }
 
@@ -215,6 +269,7 @@ export default function Page() {
 
         <button
           className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#ff4fb3]/35 bg-[linear-gradient(90deg,#c21872,#7b164b)] px-3 text-sm font-semibold shadow-[0_0_28px_rgba(255,79,179,0.16)] hover:border-[#ff8dcc]/60"
+          onClick={startNewChat}
           type="button"
         >
           <MessageSquarePlus aria-hidden="true" className="h-4 w-4" />
@@ -229,12 +284,28 @@ export default function Page() {
           />
         </label>
 
-        <div className="mt-4 flex-1 space-y-1 overflow-hidden text-sm text-[var(--muted)]">
-          {messages.length > 0 ? (
-            <div className="rounded-[8px] bg-white/5 px-3 py-2 text-pink-100">
-              Current conversation
-            </div>
-          ) : null}
+        <div className="mt-4 flex-1 space-y-1 overflow-y-auto text-sm text-[var(--muted)]">
+          {conversations.length > 0 ? (
+            conversations.map((conversation) => (
+              <button
+                className={`block w-full truncate rounded-[8px] px-3 py-2 text-left transition hover:bg-white/5 hover:text-pink-100 ${
+                  activeConversationId === conversation.conversationId
+                    ? "bg-white/8 text-pink-100"
+                    : ""
+                }`}
+                key={conversation.conversationId}
+                onClick={() => openConversation(conversation.conversationId)}
+                title={conversation.title}
+                type="button"
+              >
+                {conversation.title || "Untitled conversation"}
+              </button>
+            ))
+          ) : (
+            <p className="px-3 py-2 text-xs leading-5 text-[var(--muted)]">
+              Saved conversations will appear here.
+            </p>
+          )}
         </div>
 
         <div className="border-t border-[var(--border)] pt-3">
