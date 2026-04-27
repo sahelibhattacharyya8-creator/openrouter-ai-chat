@@ -413,17 +413,25 @@ export default function Page() {
                     </button>
                   </form>
 
-                  <div className="rounded-[18px] border border-white/10 bg-[#211927] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
-                    <div className="mb-6 flex items-center justify-between rounded-[10px] bg-white px-5 py-3 text-[#17111c]">
-                      <div className="text-xl font-black tracking-normal">OR</div>
-                      <nav className="flex gap-5 text-[11px] font-semibold">
-                        <span>Home</span>
-                        <span>Features</span>
-                        <span>Pricing</span>
-                      </nav>
-                    </div>
-                    <div className="mx-auto mb-7 flex h-12 max-w-xs items-center rounded-full bg-white p-1 text-sm font-semibold text-[#17111c] shadow-lg">
-                      <button className="h-full flex-1 rounded-full" type="button">
+                  <div className="rounded-[18px] border border-white/10 bg-[#211927]/80 p-5 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
+                    <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="text-left">
+                        <p className="text-xs font-semibold uppercase text-pink-300">
+                          Pricing
+                        </p>
+                        <h2 className="mt-1 text-2xl font-semibold">
+                          Choose your chat plan
+                        </h2>
+                        <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
+                          Start with saved chats for free. Upgrade options are
+                          ready for when you want to add billing.
+                        </p>
+                      </div>
+                      <div className="flex h-11 w-full max-w-xs items-center rounded-full bg-[#120e16] p-1 text-sm font-semibold text-pink-100 shadow-inner">
+                        <button
+                          className="h-full flex-1 rounded-full text-[var(--muted)]"
+                          type="button"
+                        >
                         Monthly
                       </button>
                       <button
@@ -433,10 +441,11 @@ export default function Page() {
                         Yearly
                       </button>
                     </div>
-                  <div className="mx-auto grid max-w-3xl gap-5 md:grid-cols-2">
+                    </div>
+                  <div className="grid gap-4 md:grid-cols-2">
                     {pricingPlans.map((plan) => (
                       <section
-                        className="flex min-h-80 flex-col rounded-[18px] border border-[#c9a3e6] bg-[#eadcff] p-5 text-left text-[#22152b] shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
+                        className="flex min-h-72 flex-col rounded-[16px] border border-pink-300/20 bg-[linear-gradient(180deg,#2b2032_0%,#1b1421_100%)] p-5 text-left text-pink-50 shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
                         key={plan.name}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -451,14 +460,14 @@ export default function Page() {
                             </span>
                           </div>
                         </div>
-                        <div className="my-4 h-px bg-[#8e5eb2]" />
-                        <p className="max-w-48 text-sm font-medium leading-5 text-[#8a55b2]">
+                        <div className="my-4 h-px bg-white/10" />
+                        <p className="max-w-52 text-sm font-medium leading-5 text-[var(--muted)]">
                           {plan.description}
                         </p>
                         <ul className="mt-8 flex-1 space-y-3 text-sm font-medium">
                           {plan.features.map((feature) => (
                             <li className="flex gap-2" key={feature}>
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#271527]" />
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-300" />
                               {feature}
                             </li>
                           ))}
