@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f5ef;
-  --foreground: #191a1a;
-  --muted: #6d6a62;
-  --border: #ded8ca;
-  --panel: #fffdf8;
-  --panel-strong: #fff8e8;
-  --primary: #0f766e;
+  --background: #151017;
+  --foreground: #f4edf7;
+  --muted: #a69aae;
+  --border: rgba(255, 255, 255, 0.09);
+  --panel: #211a25;
+  --panel-strong: #2b2130;
+  --primary: #8b1f52;
   --primary-foreground: #ffffff;
-  --accent: #c2410c;
-  --ring: #14b8a6;
+  --accent: #f472b6;
+  --ring: #e879b9;
 }
 
 * {
@@ -24,9 +24,7 @@ body {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(circle at 10% 5%, rgba(20, 184, 166, 0.12), transparent 28rem),
-    linear-gradient(135deg, #f7f5ef 0%, #f2ede1 48%, #eef5f2 100%);
+  background: radial-gradient(circle at 50% 0%, #281d31 0%, #17111c 42%, #0e0b10 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -45,5 +43,5 @@ select:focus-visible {
 }
 
 ::selection {
-  background: rgba(15, 118, 110, 0.2);
+  background: rgba(244, 114, 182, 0.28);
 }

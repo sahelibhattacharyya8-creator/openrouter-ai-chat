@@ -10,7 +10,7 @@ export function PromptInput({
   return (
     <form
       className={cn(
-        "mx-auto w-full max-w-4xl rounded-[8px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-lg",
+        "mx-auto w-full max-w-4xl rounded-[14px] border border-[var(--border)] bg-[var(--panel)] p-2 shadow-lg",
         className,
       )}
       {...props}
@@ -25,7 +25,7 @@ export function PromptInputTextarea({
   return (
     <textarea
       className={cn(
-        "max-h-44 min-h-16 w-full resize-none rounded-[6px] border-0 bg-transparent px-3 py-2 text-base leading-6 text-[var(--foreground)] placeholder:text-[var(--muted)]",
+        "max-h-44 min-h-16 w-full resize-none rounded-[10px] border-0 bg-transparent px-3 py-2 text-base leading-6 text-[var(--foreground)] placeholder:text-[var(--muted)]",
         className,
       )}
       rows={2}
