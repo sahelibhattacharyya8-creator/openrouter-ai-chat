@@ -63,7 +63,8 @@ export default function Page() {
   const [chatId] = useState(() => crypto.randomUUID());
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
-  const [authName, setAuthName] = useState("");
+  const [authFirstName, setAuthFirstName] = useState("");
+  const [authLastName, setAuthLastName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
@@ -149,7 +150,7 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: authEmail,
-          name: authName,
+          name: `${authFirstName.trim()} ${authLastName.trim()}`.trim(),
           password: authPassword,
         }),
       });
@@ -161,7 +162,8 @@ export default function Page() {
       }
 
       setUser(data.user);
-      setAuthName("");
+      setAuthFirstName("");
+      setAuthLastName("");
       setAuthEmail("");
       setAuthPassword("");
     } finally {
@@ -343,12 +345,26 @@ export default function Page() {
                     </button>
                   </div>
                   {authMode === "signup" ? (
-                    <input
-                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                      onChange={(event) => setAuthName(event.target.value)}
-                      placeholder="Name"
-                      value={authName}
-                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <input
+                        className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                        onChange={(event) =>
+                          setAuthFirstName(event.target.value)
+                        }
+                        placeholder="First name"
+                        required
+                        value={authFirstName}
+                      />
+                      <input
+                        className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                        onChange={(event) =>
+                          setAuthLastName(event.target.value)
+                        }
+                        placeholder="Last name"
+                        required
+                        value={authLastName}
+                      />
+                    </div>
                   ) : null}
                   <input
                     className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
