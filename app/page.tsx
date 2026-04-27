@@ -340,9 +340,9 @@ export default function Page() {
                 </div>
                 </>
               ) : (
-                <div className="mx-auto mt-8 grid w-full max-w-5xl gap-5 lg:grid-cols-[minmax(0,26rem)_1fr]">
+                <div className="mx-auto mt-8 grid w-full max-w-4xl gap-6">
                   <form
-                    className="grid gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
+                    className="mx-auto grid w-full max-w-md gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
                     onSubmit={submitAuth}
                   >
                     <div className="flex rounded-[8px] bg-black/20 p-1">
@@ -420,10 +420,19 @@ export default function Page() {
                     </button>
                   </form>
 
-                  <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                  <div>
+                    <div className="mb-3 text-center">
+                      <p className="text-xs font-semibold uppercase text-pink-300">
+                        Pricing
+                      </p>
+                      <h2 className="mt-1 text-xl font-semibold">
+                        Start free, upgrade when you need more.
+                      </h2>
+                    </div>
+                  <div className="grid gap-3 md:grid-cols-3">
                     {pricingPlans.map((plan) => (
                       <section
-                        className={`rounded-[14px] border p-4 text-left shadow-[0_24px_70px_rgba(0,0,0,0.25)] ${
+                        className={`flex min-h-64 flex-col rounded-[14px] border p-4 text-left shadow-[0_24px_70px_rgba(0,0,0,0.25)] ${
                           plan.name === "Free"
                             ? "border-pink-400/35 bg-[#271527]"
                             : "border-white/10 bg-white/[0.035]"
@@ -440,7 +449,7 @@ export default function Page() {
                             </p>
                           </div>
                           <div className="text-right">
-                            <span className="text-2xl font-semibold">
+                            <span className="text-3xl font-semibold">
                               {plan.price}
                             </span>
                             <span className="text-xs text-[var(--muted)]">
@@ -448,7 +457,7 @@ export default function Page() {
                             </span>
                           </div>
                         </div>
-                        <ul className="mt-4 space-y-2 text-sm text-pink-50/85">
+                        <ul className="mt-4 flex-1 space-y-2 text-sm text-pink-50/85">
                           {plan.features.map((feature) => (
                             <li className="flex gap-2" key={feature}>
                               <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-300" />
@@ -457,7 +466,7 @@ export default function Page() {
                           ))}
                         </ul>
                         <button
-                          className="mt-5 h-10 w-full rounded-[8px] border border-white/10 bg-white/[0.04] text-sm font-semibold text-pink-50 transition hover:bg-white/[0.08]"
+                          className="mt-5 h-10 w-full rounded-[8px] border border-white/10 bg-white/[0.04] text-sm font-semibold text-pink-50 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-70"
                           disabled={plan.name !== "Free"}
                           type="button"
                         >
@@ -465,6 +474,7 @@ export default function Page() {
                         </button>
                       </section>
                     ))}
+                  </div>
                   </div>
                 </div>
               )}
