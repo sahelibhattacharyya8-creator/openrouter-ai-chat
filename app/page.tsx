@@ -176,11 +176,11 @@ export default function Page() {
 
   return (
     <main className="flex h-dvh overflow-hidden bg-[#0f0b12] text-[var(--foreground)]">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--border)] bg-[linear-gradient(165deg,#2a1120_0%,#171018_42%,#110d13_100%)] p-3 md:flex">
+      <aside className="hidden w-72 shrink-0 flex-col border-r border-[var(--border)] bg-[linear-gradient(165deg,#2a1120_0%,#171018_42%,#110d13_100%)] p-3 md:flex">
         <div className="flex h-12 items-center justify-between px-2">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Bot aria-hidden="true" className="h-5 w-5 text-pink-200" />
-            <span className="text-lg font-semibold tracking-normal">
+            <span className="min-w-0 text-base font-semibold leading-tight tracking-normal">
               OpenRouter AI Chat
             </span>
           </div>
@@ -269,11 +269,17 @@ export default function Page() {
           {messages.length === 0 ? (
             <section className="flex flex-1 flex-col justify-center py-10">
               <div className="mx-auto w-full max-w-2xl text-center">
-                <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
+                <h1 className="text-3xl font-semibold leading-tight tracking-normal sm:text-4xl">
                   {user
                     ? "How can I help you?"
-                    : "Sign in to chat and save your conversations."}
+                    : "Welcome back."}
                 </h1>
+                {!user ? (
+                  <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[var(--muted)]">
+                    Login or create an account to save your OpenRouter chats,
+                    models, and conversation history.
+                  </p>
+                ) : null}
               </div>
               {user ? (
                 <>
@@ -309,13 +315,15 @@ export default function Page() {
                 </>
               ) : (
                 <form
-                  className="mx-auto mt-8 grid w-full max-w-xl gap-3 rounded-[12px] border border-[var(--border)] bg-white/[0.04] p-4 shadow-2xl"
+                  className="mx-auto mt-8 grid w-full max-w-md gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
                   onSubmit={submitAuth}
                 >
                   <div className="flex rounded-[8px] bg-black/20 p-1">
                     <button
-                      className={`flex-1 rounded-[5px] px-3 py-2 text-sm font-medium ${
-                        authMode === "login" ? "bg-[var(--panel)] shadow-sm" : ""
+                      className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
+                        authMode === "login"
+                          ? "bg-[#2a2130] text-pink-50 shadow-sm"
+                          : "text-[var(--muted)] hover:text-pink-100"
                       }`}
                       onClick={() => setAuthMode("login")}
                       type="button"
@@ -323,10 +331,10 @@ export default function Page() {
                       Login
                     </button>
                     <button
-                      className={`flex-1 rounded-[5px] px-3 py-2 text-sm font-medium ${
+                      className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
                         authMode === "signup"
-                          ? "bg-[var(--panel)] shadow-sm"
-                          : ""
+                          ? "bg-[#2a2130] text-pink-50 shadow-sm"
+                          : "text-[var(--muted)] hover:text-pink-100"
                       }`}
                       onClick={() => setAuthMode("signup")}
                       type="button"
@@ -336,14 +344,14 @@ export default function Page() {
                   </div>
                   {authMode === "signup" ? (
                     <input
-                      className="rounded-[8px] border border-[var(--border)] bg-black/20 px-3 py-2 text-sm text-white"
+                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                       onChange={(event) => setAuthName(event.target.value)}
                       placeholder="Name"
                       value={authName}
                     />
                   ) : null}
                   <input
-                    className="rounded-[8px] border border-[var(--border)] bg-black/20 px-3 py-2 text-sm text-white"
+                    className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                     onChange={(event) => setAuthEmail(event.target.value)}
                     placeholder="Email"
                     required
@@ -351,7 +359,7 @@ export default function Page() {
                     value={authEmail}
                   />
                   <input
-                    className="rounded-[8px] border border-[var(--border)] bg-black/20 px-3 py-2 text-sm text-white"
+                    className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                     minLength={8}
                     onChange={(event) => setAuthPassword(event.target.value)}
                     placeholder="Password"
@@ -363,7 +371,7 @@ export default function Page() {
                     <p className="text-sm text-red-700">{authError}</p>
                   ) : null}
                   <button
-                    className="rounded-[8px] bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 rounded-[8px] bg-[#a21b5b] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#b8266b] disabled:cursor-not-allowed disabled:opacity-60"
                     disabled={isAuthLoading}
                     type="submit"
                   >
@@ -411,14 +419,16 @@ export default function Page() {
 
       <footer className="shrink-0 px-4 pb-4 sm:px-6">
         <PromptInput
-          className="max-w-3xl border-white/10 bg-[#251d2b]/95 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)]"
+          className={`max-w-3xl border-white/10 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)] ${
+            user ? "bg-[#251d2b]/95" : "bg-[#201824]/55 opacity-80"
+          }`}
           onSubmit={(event) => {
             event.preventDefault();
             submitMessage();
           }}
         >
           <PromptInputTextarea
-            className="min-h-20 text-base placeholder:text-[#8f8498]"
+            className="min-h-20 text-base placeholder:text-[#8f8498] disabled:cursor-not-allowed"
             disabled={isBusy || !user}
             onChange={(event) => setInput(event.target.value)}
             onKeyDown={(event) => {
