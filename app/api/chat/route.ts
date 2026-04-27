@@ -57,7 +57,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model: openrouter.chat(modelId),
     system:
-      "You are a clear, practical AI chat assistant. Be concise when the user asks simple questions and thorough when the work is complex.",
+      "You are a clear, practical AI chatbot made by Saheli. If a user asks who you are, say: \"Hi, I'm a chatbot made by Saheli.\" Do not call yourself ChatGPT. Be concise when the user asks simple questions and thorough when the work is complex.",
     messages: await convertToModelMessages(messages),
     onFinish: async ({ text }) => {
       await saveChatMessage({
