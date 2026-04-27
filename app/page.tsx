@@ -34,6 +34,7 @@ type AuthUser = {
 };
 
 export default function Page() {
+  const conversationRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
   const [chatId] = useState(() => crypto.randomUUID());
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -61,13 +62,30 @@ export default function Page() {
 
   const isBusy = status === "submitted" || status === "streaming";
   const activeModel = CHAT_MODELS.find((item) => item.id === model);
+  const messageScrollKey = messages
+    .map((message) =>
+      message.parts
+        .map((part) => (part.type === "text" ? part.text : ""))
+        .join(""),
+    )
+    .join("");
 
   useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
+    const frame = requestAnimationFrame(() => {
+      const conversation = conversationRef.current;
+
+      if (conversation) {
+        conversation.scrollTop = conversation.scrollHeight;
+      }
+
+      endOfMessagesRef.current?.scrollIntoView({
+        behavior: status === "streaming" ? "auto" : "smooth",
+        block: "end",
+      });
     });
-  }, [messages, status]);
+
+    return () => cancelAnimationFrame(frame);
+  }, [messageScrollKey, status]);
 
   useEffect(() => {
     async function loadUser() {
@@ -167,7 +185,7 @@ export default function Page() {
         </div>
       </header>
 
-      <Conversation>
+      <Conversation ref={conversationRef}>
         <ConversationContent>
           {messages.length === 0 ? (
             <section className="flex flex-1 flex-col justify-center py-10">

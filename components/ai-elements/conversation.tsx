@@ -1,19 +1,22 @@
 "use client";
 
-import type { HTMLAttributes } from "react";
+import { forwardRef, type HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-export function Conversation({
-  className,
-  ...props
-}: HTMLAttributes<HTMLDivElement>) {
+export const Conversation = forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => {
   return (
     <div
       className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto", className)}
+      ref={ref}
       {...props}
     />
   );
-}
+});
+
+Conversation.displayName = "Conversation";
 
 export function ConversationContent({
   className,
