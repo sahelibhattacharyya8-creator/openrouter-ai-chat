@@ -51,6 +51,30 @@ const promptModes = [
   { label: "Learn", icon: GraduationCap },
 ];
 
+const pricingPlans = [
+  {
+    name: "Free",
+    price: "$0",
+    description: "Try the chat with saved history and free OpenRouter models.",
+    features: ["Saved conversations", "Free model access", "Basic chat history"],
+    cta: "Start free",
+  },
+  {
+    name: "Pro",
+    price: "$9",
+    description: "For regular use with faster workflows and priority features.",
+    features: ["Everything in Free", "Priority model presets", "Longer chat history"],
+    cta: "Coming soon",
+  },
+  {
+    name: "Team",
+    price: "$29",
+    description: "For small teams that want shared AI workspaces.",
+    features: ["Team seats", "Shared conversations", "Admin controls"],
+    cta: "Coming soon",
+  },
+];
+
 type AuthUser = {
   id: string;
   email: string;
@@ -316,84 +340,133 @@ export default function Page() {
                 </div>
                 </>
               ) : (
-                <form
-                  className="mx-auto mt-8 grid w-full max-w-md gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
-                  onSubmit={submitAuth}
-                >
-                  <div className="flex rounded-[8px] bg-black/20 p-1">
-                    <button
-                      className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
-                        authMode === "login"
-                          ? "bg-[#2a2130] text-pink-50 shadow-sm"
-                          : "text-[var(--muted)] hover:text-pink-100"
-                      }`}
-                      onClick={() => setAuthMode("login")}
-                      type="button"
-                    >
-                      Login
-                    </button>
-                    <button
-                      className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
-                        authMode === "signup"
-                          ? "bg-[#2a2130] text-pink-50 shadow-sm"
-                          : "text-[var(--muted)] hover:text-pink-100"
-                      }`}
-                      onClick={() => setAuthMode("signup")}
-                      type="button"
-                    >
-                      Sign up
-                    </button>
-                  </div>
-                  {authMode === "signup" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <input
-                        className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                        onChange={(event) =>
-                          setAuthFirstName(event.target.value)
-                        }
-                        placeholder="First name"
-                        required
-                        value={authFirstName}
-                      />
-                      <input
-                        className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                        onChange={(event) =>
-                          setAuthLastName(event.target.value)
-                        }
-                        placeholder="Last name"
-                        required
-                        value={authLastName}
-                      />
-                    </div>
-                  ) : null}
-                  <input
-                    className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                    onChange={(event) => setAuthEmail(event.target.value)}
-                    placeholder="Email"
-                    required
-                    type="email"
-                    value={authEmail}
-                  />
-                  <input
-                    className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                    minLength={8}
-                    onChange={(event) => setAuthPassword(event.target.value)}
-                    placeholder="Password"
-                    required
-                    type="password"
-                    value={authPassword}
-                  />
-                  {authError ? (
-                    <p className="text-sm text-red-700">{authError}</p>
-                  ) : null}
-                  <button
-                    className="h-11 rounded-[8px] bg-[#a21b5b] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#b8266b] disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isAuthLoading}
-                    type="submit"
+                <div className="mx-auto mt-8 grid w-full max-w-5xl gap-5 lg:grid-cols-[minmax(0,26rem)_1fr]">
+                  <form
+                    className="grid gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
+                    onSubmit={submitAuth}
                   >
-                    {authMode === "login" ? "Login" : "Create account"}
-                  </button>
-                </form>
+                    <div className="flex rounded-[8px] bg-black/20 p-1">
+                      <button
+                        className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
+                          authMode === "login"
+                            ? "bg-[#2a2130] text-pink-50 shadow-sm"
+                            : "text-[var(--muted)] hover:text-pink-100"
+                        }`}
+                        onClick={() => setAuthMode("login")}
+                        type="button"
+                      >
+                        Login
+                      </button>
+                      <button
+                        className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
+                          authMode === "signup"
+                            ? "bg-[#2a2130] text-pink-50 shadow-sm"
+                            : "text-[var(--muted)] hover:text-pink-100"
+                        }`}
+                        onClick={() => setAuthMode("signup")}
+                        type="button"
+                      >
+                        Sign up
+                      </button>
+                    </div>
+                    {authMode === "signup" ? (
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <input
+                          className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                          onChange={(event) =>
+                            setAuthFirstName(event.target.value)
+                          }
+                          placeholder="First name"
+                          required
+                          value={authFirstName}
+                        />
+                        <input
+                          className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                          onChange={(event) =>
+                            setAuthLastName(event.target.value)
+                          }
+                          placeholder="Last name"
+                          required
+                          value={authLastName}
+                        />
+                      </div>
+                    ) : null}
+                    <input
+                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                      onChange={(event) => setAuthEmail(event.target.value)}
+                      placeholder="Email"
+                      required
+                      type="email"
+                      value={authEmail}
+                    />
+                    <input
+                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                      minLength={8}
+                      onChange={(event) => setAuthPassword(event.target.value)}
+                      placeholder="Password"
+                      required
+                      type="password"
+                      value={authPassword}
+                    />
+                    {authError ? (
+                      <p className="text-sm text-red-300">{authError}</p>
+                    ) : null}
+                    <button
+                      className="h-11 rounded-[8px] bg-[#a21b5b] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#b8266b] disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={isAuthLoading}
+                      type="submit"
+                    >
+                      {authMode === "login" ? "Login" : "Create account"}
+                    </button>
+                  </form>
+
+                  <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                    {pricingPlans.map((plan) => (
+                      <section
+                        className={`rounded-[14px] border p-4 text-left shadow-[0_24px_70px_rgba(0,0,0,0.25)] ${
+                          plan.name === "Free"
+                            ? "border-pink-400/35 bg-[#271527]"
+                            : "border-white/10 bg-white/[0.035]"
+                        }`}
+                        key={plan.name}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <h3 className="text-base font-semibold">
+                              {plan.name}
+                            </h3>
+                            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
+                              {plan.description}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-2xl font-semibold">
+                              {plan.price}
+                            </span>
+                            <span className="text-xs text-[var(--muted)]">
+                              /mo
+                            </span>
+                          </div>
+                        </div>
+                        <ul className="mt-4 space-y-2 text-sm text-pink-50/85">
+                          {plan.features.map((feature) => (
+                            <li className="flex gap-2" key={feature}>
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-300" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          className="mt-5 h-10 w-full rounded-[8px] border border-white/10 bg-white/[0.04] text-sm font-semibold text-pink-50 transition hover:bg-white/[0.08]"
+                          disabled={plan.name !== "Free"}
+                          type="button"
+                        >
+                          {plan.cta}
+                        </button>
+                      </section>
+                    ))}
+                  </div>
+                </div>
               )}
             </section>
           ) : (
