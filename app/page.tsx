@@ -335,7 +335,7 @@ export default function Page() {
               ) : (
                 <div className="mx-auto mt-8 grid w-full max-w-4xl gap-6">
                   <form
-                    className="mx-auto grid w-full max-w-md gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
+                    className="mx-auto grid w-full max-w-md gap-3 rounded-[24px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
                     onSubmit={submitAuth}
                   >
                     <div className="flex rounded-full bg-black/20 p-1">
@@ -365,7 +365,7 @@ export default function Page() {
                     {authMode === "signup" ? (
                       <div className="grid gap-3 sm:grid-cols-2">
                         <input
-                          className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                          className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                           onChange={(event) =>
                             setAuthFirstName(event.target.value)
                           }
@@ -374,7 +374,7 @@ export default function Page() {
                           value={authFirstName}
                         />
                         <input
-                          className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                          className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                           onChange={(event) =>
                             setAuthLastName(event.target.value)
                           }
@@ -385,7 +385,7 @@ export default function Page() {
                       </div>
                     ) : null}
                     <input
-                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                      className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                       onChange={(event) => setAuthEmail(event.target.value)}
                       placeholder="Email"
                       required
@@ -393,7 +393,7 @@ export default function Page() {
                       value={authEmail}
                     />
                     <input
-                      className="h-11 rounded-[8px] border border-white/10 bg-[#120e16] px-3 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                      className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                       minLength={8}
                       onChange={(event) => setAuthPassword(event.target.value)}
                       placeholder="Password"
