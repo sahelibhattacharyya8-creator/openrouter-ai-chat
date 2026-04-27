@@ -11,6 +11,12 @@ export const CHAT_MODELS = [
     maker: "Google",
     tone: "Instruction-tuned general chat",
   },
+  {
+    id: "nvidia/nemotron-3-super-120b-a12b:free",
+    label: "Nemotron 3 Super 120B",
+    maker: "NVIDIA",
+    tone: "Large open reasoning model",
+  },
 ] as const;
 
 export type ChatModelId = (typeof CHAT_MODELS)[number]["id"];
