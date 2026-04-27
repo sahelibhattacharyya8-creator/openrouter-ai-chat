@@ -105,6 +105,7 @@ export default function Page() {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState(chatId);
+  const [conversationSearch, setConversationSearch] = useState("");
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -131,6 +132,11 @@ export default function Page() {
 
   const isBusy = status === "submitted" || status === "streaming";
   const activeModel = CHAT_MODELS.find((item) => item.id === model);
+  const filteredConversations = conversations.filter((conversation) =>
+    (conversation.title || "Untitled conversation")
+      .toLowerCase()
+      .includes(conversationSearch.trim().toLowerCase()),
+  );
   const messageScrollKey = messages
     .map((message) =>
       message.parts
@@ -396,13 +402,15 @@ export default function Page() {
           <Search aria-hidden="true" className="h-4 w-4" />
           <input
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-[var(--muted)]"
+            onChange={(event) => setConversationSearch(event.target.value)}
             placeholder="Search your threads..."
+            value={conversationSearch}
           />
         </label>
 
         <div className="mt-4 flex-1 space-y-1 overflow-y-auto text-sm text-[var(--muted)]">
-          {conversations.length > 0 ? (
-            conversations.map((conversation) => {
+          {filteredConversations.length > 0 ? (
+            filteredConversations.map((conversation) => {
               const isActive =
                 activeConversationId === conversation.conversationId;
               const isEditing =
@@ -529,7 +537,9 @@ export default function Page() {
             })
           ) : (
             <p className="px-3 py-2 text-xs leading-5 text-[var(--muted)]">
-              Saved conversations will appear here.
+              {conversationSearch
+                ? "No conversations match your search."
+                : "Saved conversations will appear here."}
             </p>
           )}
         </div>
