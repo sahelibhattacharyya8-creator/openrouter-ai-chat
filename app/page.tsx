@@ -53,25 +53,18 @@ const promptModes = [
 
 const pricingPlans = [
   {
-    name: "Free",
+    name: "Standard",
     price: "$0",
-    description: "Try the chat with saved history and free OpenRouter models.",
-    features: ["Saved conversations", "Free model access", "Basic chat history"],
+    description: "Single-user access to AI features",
+    features: ["Access to AI core features", "Basic support", "Limited usage"],
     cta: "Start free",
   },
   {
     name: "Pro",
-    price: "$9",
-    description: "For regular use with faster workflows and priority features.",
-    features: ["Everything in Free", "Priority model presets", "Longer chat history"],
-    cta: "Coming soon",
-  },
-  {
-    name: "Team",
-    price: "$29",
-    description: "For small teams that want shared AI workspaces.",
-    features: ["Team seats", "Shared conversations", "Admin controls"],
-    cta: "Coming soon",
+    price: "$49",
+    description: "Mobile and desktop compatibility",
+    features: ["Everything in Basic", "Advanced AI capabilities", "Priority support"],
+    cta: "Join pro",
   },
 ];
 
@@ -420,23 +413,30 @@ export default function Page() {
                     </button>
                   </form>
 
-                  <div>
-                    <div className="mb-3 text-center">
-                      <p className="text-xs font-semibold uppercase text-pink-300">
-                        Pricing
-                      </p>
-                      <h2 className="mt-1 text-xl font-semibold">
-                        Start free, upgrade when you need more.
-                      </h2>
+                  <div className="rounded-[18px] border border-white/10 bg-[#211927] p-4 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
+                    <div className="mb-6 flex items-center justify-between rounded-[10px] bg-white px-5 py-3 text-[#17111c]">
+                      <div className="text-xl font-black tracking-normal">OR</div>
+                      <nav className="flex gap-5 text-[11px] font-semibold">
+                        <span>Home</span>
+                        <span>Features</span>
+                        <span>Pricing</span>
+                      </nav>
                     </div>
-                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="mx-auto mb-7 flex h-12 max-w-xs items-center rounded-full bg-white p-1 text-sm font-semibold text-[#17111c] shadow-lg">
+                      <button className="h-full flex-1 rounded-full" type="button">
+                        Monthly
+                      </button>
+                      <button
+                        className="h-full flex-1 rounded-full bg-[linear-gradient(90deg,#7e22ce,#c026d3)] text-white shadow-[0_10px_25px_rgba(192,38,211,0.35)]"
+                        type="button"
+                      >
+                        Yearly
+                      </button>
+                    </div>
+                  <div className="mx-auto grid max-w-3xl gap-5 md:grid-cols-2">
                     {pricingPlans.map((plan) => (
                       <section
-                        className={`flex min-h-64 flex-col rounded-[14px] border p-4 text-left shadow-[0_24px_70px_rgba(0,0,0,0.25)] ${
-                          plan.name === "Free"
-                            ? "border-pink-400/35 bg-[#271527]"
-                            : "border-white/10 bg-white/[0.035]"
-                        }`}
+                        className="flex min-h-80 flex-col rounded-[18px] border border-[#c9a3e6] bg-[#eadcff] p-5 text-left text-[#22152b] shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
                         key={plan.name}
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -444,30 +444,27 @@ export default function Page() {
                             <h3 className="text-base font-semibold">
                               {plan.name}
                             </h3>
-                            <p className="mt-1 text-xs leading-5 text-[var(--muted)]">
-                              {plan.description}
-                            </p>
                           </div>
                           <div className="text-right">
-                            <span className="text-3xl font-semibold">
+                            <span className="text-3xl font-semibold tracking-normal">
                               {plan.price}
-                            </span>
-                            <span className="text-xs text-[var(--muted)]">
-                              /mo
                             </span>
                           </div>
                         </div>
-                        <ul className="mt-4 flex-1 space-y-2 text-sm text-pink-50/85">
+                        <div className="my-4 h-px bg-[#8e5eb2]" />
+                        <p className="max-w-48 text-sm font-medium leading-5 text-[#8a55b2]">
+                          {plan.description}
+                        </p>
+                        <ul className="mt-8 flex-1 space-y-3 text-sm font-medium">
                           {plan.features.map((feature) => (
                             <li className="flex gap-2" key={feature}>
-                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-pink-300" />
+                              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#271527]" />
                               {feature}
                             </li>
                           ))}
                         </ul>
                         <button
-                          className="mt-5 h-10 w-full rounded-[8px] border border-white/10 bg-white/[0.04] text-sm font-semibold text-pink-50 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-70"
-                          disabled={plan.name !== "Free"}
+                          className="mt-5 h-11 w-full rounded-full bg-[linear-gradient(90deg,#8b1fbd,#a21bdb)] text-xs font-semibold text-white shadow-[0_12px_30px_rgba(139,31,189,0.28)] transition hover:brightness-110"
                           type="button"
                         >
                           {plan.cta}
