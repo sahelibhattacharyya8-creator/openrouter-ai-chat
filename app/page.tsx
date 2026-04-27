@@ -28,6 +28,7 @@ const suggestions = [
 ];
 
 export default function Page() {
+  const [chatId] = useState(() => crypto.randomUUID());
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
 
@@ -35,9 +36,9 @@ export default function Page() {
     () =>
       new DefaultChatTransport({
         api: "/api/chat",
-        body: { model },
+        body: { chatId, model },
       }),
-    [model],
+    [chatId, model],
   );
 
   const { messages, sendMessage, status, stop, error } = useChat({
