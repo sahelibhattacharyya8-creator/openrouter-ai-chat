@@ -338,9 +338,9 @@ export default function Page() {
                     className="mx-auto grid w-full max-w-md gap-3 rounded-[14px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
                     onSubmit={submitAuth}
                   >
-                    <div className="flex rounded-[8px] bg-black/20 p-1">
+                    <div className="flex rounded-full bg-black/20 p-1">
                       <button
-                        className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
+                        className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition ${
                           authMode === "login"
                             ? "bg-[#2a2130] text-pink-50 shadow-sm"
                             : "text-[var(--muted)] hover:text-pink-100"
@@ -351,7 +351,7 @@ export default function Page() {
                         Login
                       </button>
                       <button
-                        className={`flex-1 rounded-[7px] px-3 py-2 text-sm font-medium transition ${
+                        className={`flex-1 rounded-full px-3 py-2 text-sm font-medium transition ${
                           authMode === "signup"
                             ? "bg-[#2a2130] text-pink-50 shadow-sm"
                             : "text-[var(--muted)] hover:text-pink-100"
@@ -405,7 +405,7 @@ export default function Page() {
                       <p className="text-sm text-red-300">{authError}</p>
                     ) : null}
                     <button
-                    className="h-11 rounded-[8px] bg-[#c21872] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 rounded-full bg-[#c21872] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={isAuthLoading}
                       type="submit"
                     >
