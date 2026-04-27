@@ -214,7 +214,7 @@ export default function Page() {
         </div>
 
         <button
-          className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-[8px] border border-pink-400/25 bg-[linear-gradient(90deg,#751442,#51203b)] px-3 text-sm font-semibold shadow-[0_0_28px_rgba(244,114,182,0.12)] hover:border-pink-300/50"
+          className="mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-[8px] border border-[#ff4fb3]/35 bg-[linear-gradient(90deg,#c21872,#7b164b)] px-3 text-sm font-semibold shadow-[0_0_28px_rgba(255,79,179,0.16)] hover:border-[#ff8dcc]/60"
           type="button"
         >
           <MessageSquarePlus aria-hidden="true" className="h-4 w-4" />
@@ -405,7 +405,7 @@ export default function Page() {
                       <p className="text-sm text-red-300">{authError}</p>
                     ) : null}
                     <button
-                      className="h-11 rounded-[8px] bg-[#a21b5b] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#b8266b] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-11 rounded-[8px] bg-[#c21872] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-60"
                       disabled={isAuthLoading}
                       type="submit"
                     >
@@ -435,7 +435,7 @@ export default function Page() {
                         Monthly
                       </button>
                       <button
-                        className="h-full flex-1 rounded-full bg-[linear-gradient(90deg,#7e22ce,#c026d3)] text-white shadow-[0_10px_25px_rgba(192,38,211,0.35)]"
+                        className="h-full flex-1 rounded-full bg-[linear-gradient(90deg,#c21872,#ff4fb3)] text-white shadow-[0_10px_25px_rgba(255,79,179,0.35)]"
                         type="button"
                       >
                         Yearly
@@ -473,7 +473,7 @@ export default function Page() {
                           ))}
                         </ul>
                         <button
-                          className="mt-5 h-11 w-full rounded-full bg-[linear-gradient(90deg,#8b1fbd,#a21bdb)] text-xs font-semibold text-white shadow-[0_12px_30px_rgba(139,31,189,0.28)] transition hover:brightness-110"
+                          className="mt-5 h-11 w-full rounded-full bg-[linear-gradient(90deg,#c21872,#ff4fb3)] text-xs font-semibold text-white shadow-[0_12px_30px_rgba(255,79,179,0.28)] transition hover:brightness-110"
                           type="button"
                         >
                           {plan.cta}
@@ -572,7 +572,7 @@ export default function Page() {
             ) : (
               <button
                 aria-label="Send message"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] bg-pink-500 text-white transition hover:bg-pink-400 disabled:cursor-not-allowed disabled:opacity-45"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] bg-[#c21872] text-white transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-45"
                 disabled={!input.trim() || !user}
                 title="Send message"
                 type="submit"

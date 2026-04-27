@@ -31,7 +31,7 @@ export function MessageContent({
     <div
       className={cn(
         "max-w-[min(44rem,86%)] rounded-[10px] border px-4 py-3 text-[0.95rem] leading-7 shadow-sm",
-        "group-data-[from=user]:border-pink-300/20 group-data-[from=user]:bg-[#8b1f52] group-data-[from=user]:text-[var(--primary-foreground)]",
+        "group-data-[from=user]:border-[#ff8dcc]/25 group-data-[from=user]:bg-[#c21872] group-data-[from=user]:text-[var(--primary-foreground)]",
         "group-data-[from=assistant]:border-white/10 group-data-[from=assistant]:bg-white/[0.045] group-data-[from=assistant]:text-pink-50",
         className,
       )}

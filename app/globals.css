@@ -7,10 +7,10 @@
   --border: rgba(255, 255, 255, 0.09);
   --panel: #211a25;
   --panel-strong: #2b2130;
-  --primary: #8b1f52;
+  --primary: #c21872;
   --primary-foreground: #ffffff;
-  --accent: #f472b6;
-  --ring: #e879b9;
+  --accent: #ff4fb3;
+  --ring: #ff66bd;
 }
 
 * {
