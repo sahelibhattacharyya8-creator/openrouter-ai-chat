@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { LoaderCircle, LogOut, Send, Square, UserRound } from "lucide-react";
@@ -34,6 +34,7 @@ type AuthUser = {
 };
 
 export default function Page() {
+  const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
   const [chatId] = useState(() => crypto.randomUUID());
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authMode, setAuthMode] = useState<"login" | "signup">("login");
@@ -60,6 +61,13 @@ export default function Page() {
 
   const isBusy = status === "submitted" || status === "streaming";
   const activeModel = CHAT_MODELS.find((item) => item.id === model);
+
+  useEffect(() => {
+    endOfMessagesRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, status]);
 
   useEffect(() => {
     async function loadUser() {
@@ -284,6 +292,8 @@ export default function Page() {
               {error.message}
             </div>
           ) : null}
+
+          <div ref={endOfMessagesRef} />
         </ConversationContent>
       </Conversation>
 
