@@ -180,7 +180,9 @@ export default function Page() {
         <div className="flex h-12 items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <Bot aria-hidden="true" className="h-5 w-5 text-pink-200" />
-            <span className="text-lg font-semibold tracking-normal">T3.chat</span>
+            <span className="text-lg font-semibold tracking-normal">
+              OpenRouter AI Chat
+            </span>
           </div>
           <button
             aria-label="Toggle sidebar"
@@ -246,7 +248,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3 md:hidden">
             <Bot aria-hidden="true" className="h-5 w-5 text-pink-200" />
-            <span className="font-semibold">T3.chat</span>
+            <span className="font-semibold">OpenRouter AI Chat</span>
           </div>
           <div className="hidden md:block" />
           <div className="flex min-w-0 items-center gap-2">
