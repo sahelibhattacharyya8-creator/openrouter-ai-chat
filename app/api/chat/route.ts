@@ -1,5 +1,6 @@
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
+import { getCurrentUser } from "@/lib/auth";
 import { saveChatMessage } from "@/lib/db";
 import { DEFAULT_CHAT_MODEL, isChatModelId } from "@/lib/models";
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
   } = await req.json();
 
   const modelId = isChatModelId(model) ? model : DEFAULT_CHAT_MODEL;
+  const user = await getCurrentUser();
   const conversationId = chatId || crypto.randomUUID();
   const latestUserMessage = [...messages]
     .reverse()
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
       .trim() ?? "";
 
   await saveChatMessage({
+    userId: user?.id,
     conversationId,
     role: "user",
     content: latestUserText,
@@ -58,6 +61,7 @@ export async function POST(req: Request) {
     messages: await convertToModelMessages(messages),
     onFinish: async ({ text }) => {
       await saveChatMessage({
+        userId: user?.id,
         conversationId,
         role: "assistant",
         content: text,
