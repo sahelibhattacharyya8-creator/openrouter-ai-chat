@@ -28,6 +28,8 @@ export type StoredChatMessage = {
   createdAt: string;
 };
 
+export type PaymentStatus = "created" | "paid" | "failed";
+
 const databaseUrl = process.env.DATABASE_URL;
 const sql = databaseUrl ? neon(databaseUrl) : null;
 
@@ -73,6 +75,22 @@ async function ensureSchema() {
         title TEXT NOT NULL,
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         PRIMARY KEY (user_id, conversation_id)
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS payments (
+        id BIGSERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        provider TEXT NOT NULL,
+        plan TEXT NOT NULL,
+        provider_order_id TEXT NOT NULL UNIQUE,
+        provider_payment_id TEXT,
+        amount INTEGER NOT NULL,
+        currency TEXT NOT NULL,
+        status TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
   })();
@@ -299,4 +317,86 @@ export async function deleteConversation({
   `;
 
   return rows.length;
+}
+
+export async function createPaymentRecord({
+  userId,
+  plan,
+  providerOrderId,
+  amount,
+  currency,
+  status,
+}: {
+  userId: string;
+  plan: string;
+  providerOrderId: string;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    INSERT INTO payments (
+      user_id,
+      provider,
+      plan,
+      provider_order_id,
+      amount,
+      currency,
+      status
+    )
+    VALUES (
+      ${userId},
+      'razorpay',
+      ${plan},
+      ${providerOrderId},
+      ${amount},
+      ${currency},
+      ${status}
+    )
+    ON CONFLICT (provider_order_id)
+    DO UPDATE SET
+      user_id = EXCLUDED.user_id,
+      plan = EXCLUDED.plan,
+      amount = EXCLUDED.amount,
+      currency = EXCLUDED.currency,
+      status = EXCLUDED.status,
+      updated_at = NOW()
+    RETURNING id
+  `;
+
+  return rows[0] as { id: number };
+}
+
+export async function updatePaymentRecord({
+  providerOrderId,
+  providerPaymentId,
+  status,
+}: {
+  providerOrderId: string;
+  providerPaymentId?: string;
+  status: PaymentStatus;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    UPDATE payments
+    SET
+      provider_payment_id = ${providerPaymentId ?? null},
+      status = ${status},
+      updated_at = NOW()
+    WHERE provider_order_id = ${providerOrderId}
+    RETURNING id, plan, status
+  `;
+
+  return (rows[0] as { id: number; plan: string; status: string } | undefined) ?? null;
 }

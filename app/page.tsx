@@ -59,19 +59,50 @@ const promptModes = [
 const pricingPlans = [
   {
     name: "Standard",
-    price: "$0",
+    price: "₹0",
     description: "Single-user access to AI features",
     features: ["Access to AI core features", "Basic support", "Limited usage"],
     cta: "Start free",
   },
   {
     name: "Pro",
-    price: "$49",
+    price: "₹499",
     description: "Mobile and desktop compatibility",
     features: ["Everything in Basic", "Advanced AI capabilities", "Priority support"],
     cta: "Join pro",
   },
 ];
+
+type RazorpayCheckoutResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayCheckoutOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: {
+    name?: string;
+    email?: string;
+  };
+  theme: {
+    color: string;
+  };
+  handler: (response: RazorpayCheckoutResponse) => void;
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => {
+      open: () => void;
+    };
+  }
+}
 
 type AuthUser = {
   id: string;
@@ -107,6 +138,7 @@ export default function Page() {
   const [activeConversationId, setActiveConversationId] = useState(chatId);
   const [conversationSearch, setConversationSearch] = useState("");
   const [billingError, setBillingError] = useState("");
+  const [billingSuccess, setBillingSuccess] = useState("");
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
@@ -358,24 +390,79 @@ export default function Page() {
     setUser(null);
   }
 
-  async function startCheckout(plan: "pro" | "team") {
+  async function loadRazorpayCheckout() {
+    if (window.Razorpay) {
+      return true;
+    }
+
+    return new Promise<boolean>((resolve) => {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  }
+
+  async function startCheckout(plan: "pro") {
     setBillingError("");
+    setBillingSuccess("");
     setBillingPlan(plan);
 
     try {
-      const response = await fetch("/api/billing/checkout", {
+      const isLoaded = await loadRazorpayCheckout();
+
+      if (!isLoaded || !window.Razorpay) {
+        setBillingError("Could not load Razorpay Checkout.");
+        return;
+      }
+
+      const response = await fetch("/api/billing/razorpay/order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan }),
       });
       const data = await response.json();
 
-      if (!response.ok || !data.url) {
+      if (!response.ok) {
         setBillingError(data.error ?? "Could not start checkout.");
         return;
       }
 
-      window.location.href = data.url;
+      const checkout = new window.Razorpay({
+        key: data.keyId,
+        amount: data.amount,
+        currency: data.currency,
+        name: "OpenRouter AI Chat",
+        description: `${plan.toUpperCase()} plan`,
+        order_id: data.orderId,
+        prefill: {
+          name: data.name,
+          email: data.email,
+        },
+        theme: {
+          color: "#c21872",
+        },
+        handler: async (paymentResponse) => {
+          const verifyResponse = await fetch("/api/billing/razorpay/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(paymentResponse),
+          });
+          const verifyData = await verifyResponse.json();
+
+          if (!verifyResponse.ok) {
+            setBillingError(
+              verifyData.error ?? "Payment verification failed.",
+            );
+            return;
+          }
+
+          setBillingSuccess("Payment verified. Your Pro test payment is saved.");
+        },
+      });
+
+      checkout.open();
     } finally {
       setBillingPlan(null);
     }
@@ -788,14 +875,17 @@ export default function Page() {
                         {billingError}
                       </p>
                     ) : null}
+                    {billingSuccess ? (
+                      <p className="mb-3 rounded-[10px] border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                        {billingSuccess}
+                      </p>
+                    ) : null}
                   <div className="grid gap-4 md:grid-cols-2">
                     {pricingPlans.map((plan) => {
                       const planKey =
                         plan.name === "Pro"
                           ? "pro"
-                          : plan.name === "Team"
-                            ? "team"
-                            : null;
+                          : null;
 
                       return (
                       <section
