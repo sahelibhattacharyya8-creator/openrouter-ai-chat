@@ -22,6 +22,10 @@ OPENROUTER_SITE_URL=http://localhost:3000
 OPENROUTER_APP_NAME=OpenRouter AI Chat
 DATABASE_URL=your_neon_postgres_url
 AUTH_SECRET=replace-with-a-long-random-secret
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key
+STRIPE_PRICE_PRO=price_your_pro_price_id
+STRIPE_PRICE_TEAM=price_your_team_price_id
 ```
 
 Open [http://localhost:3000](http://localhost:3000).

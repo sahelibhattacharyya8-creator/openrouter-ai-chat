@@ -106,6 +106,8 @@ export default function Page() {
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState(chatId);
   const [conversationSearch, setConversationSearch] = useState("");
+  const [billingError, setBillingError] = useState("");
+  const [billingPlan, setBillingPlan] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -354,6 +356,29 @@ export default function Page() {
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
+  }
+
+  async function startCheckout(plan: "pro" | "team") {
+    setBillingError("");
+    setBillingPlan(plan);
+
+    try {
+      const response = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.url) {
+        setBillingError(data.error ?? "Could not start checkout.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } finally {
+      setBillingPlan(null);
+    }
   }
 
   return (
@@ -758,8 +783,21 @@ export default function Page() {
                       </button>
                     </div>
                     </div>
+                    {billingError ? (
+                      <p className="mb-3 rounded-[10px] border border-red-300/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                        {billingError}
+                      </p>
+                    ) : null}
                   <div className="grid gap-4 md:grid-cols-2">
-                    {pricingPlans.map((plan) => (
+                    {pricingPlans.map((plan) => {
+                      const planKey =
+                        plan.name === "Pro"
+                          ? "pro"
+                          : plan.name === "Team"
+                            ? "team"
+                            : null;
+
+                      return (
                       <section
                         className="flex min-h-72 flex-col rounded-[16px] border border-pink-300/20 bg-[linear-gradient(180deg,#2b2032_0%,#1b1421_100%)] p-5 text-left text-pink-50 shadow-[0_24px_60px_rgba(0,0,0,0.25)]"
                         key={plan.name}
@@ -790,12 +828,18 @@ export default function Page() {
                         </ul>
                         <button
                           className="mt-5 h-11 w-full rounded-full bg-[linear-gradient(90deg,#c21872,#ff4fb3)] text-xs font-semibold text-white shadow-[0_12px_30px_rgba(255,79,179,0.28)] transition hover:brightness-110"
+                          disabled={!planKey || billingPlan === planKey}
+                          onClick={() => {
+                            if (planKey) {
+                              startCheckout(planKey);
+                            }
+                          }}
                           type="button"
                         >
-                          {plan.cta}
+                          {billingPlan === planKey ? "Opening..." : plan.cta}
                         </button>
                       </section>
-                    ))}
+                    )})}
                   </div>
                   </div>
                 </div>
