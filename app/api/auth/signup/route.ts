@@ -1,6 +1,11 @@
 import { hash } from "bcryptjs";
-import { createSession } from "@/lib/auth";
 import { createUser, isDatabaseConfigured } from "@/lib/db";
+import {
+  createVerificationToken,
+  createVerificationUrl,
+  hashVerificationToken,
+  sendVerificationEmail,
+} from "@/lib/email-verification";
 
 export async function POST(req: Request) {
   if (!isDatabaseConfigured()) {
@@ -27,11 +32,25 @@ export async function POST(req: Request) {
   }
 
   try {
+    const verificationToken = createVerificationToken();
+    const verificationTokenHash =
+      await hashVerificationToken(verificationToken);
     const passwordHash = await hash(password, 12);
-    const user = await createUser({ email, name, passwordHash });
-    await createSession(user);
+    const user = await createUser({
+      email,
+      name,
+      passwordHash,
+      verificationTokenHash,
+    });
 
-    return Response.json({ user });
+    await sendVerificationEmail({
+      user,
+      verificationUrl: createVerificationUrl(verificationToken),
+    });
+
+    return Response.json({
+      message: "Check your email to verify your account before logging in.",
+    });
   } catch (error) {
     if (
       error instanceof Error &&

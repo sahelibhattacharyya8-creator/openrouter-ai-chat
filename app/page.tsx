@@ -133,6 +133,7 @@ export default function Page() {
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authError, setAuthError] = useState("");
+  const [authSuccess, setAuthSuccess] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [activeConversationId, setActiveConversationId] = useState(chatId);
@@ -197,6 +198,21 @@ export default function Page() {
   }, [messageScrollKey, status]);
 
   useEffect(() => {
+    const verified = new URLSearchParams(window.location.search).get(
+      "verified",
+    );
+
+    if (verified === "success") {
+      setAuthSuccess("Email verified. You are logged in now.");
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (verified === "invalid") {
+      setAuthError("Verification link is invalid or expired.");
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (verified === "missing") {
+      setAuthError("Verification link is missing a token.");
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
     async function loadUser() {
       try {
         const response = await fetch("/api/auth/me");
@@ -356,6 +372,7 @@ export default function Page() {
   async function submitAuth(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAuthError("");
+    setAuthSuccess("");
     setIsAuthLoading(true);
 
     try {
@@ -372,6 +389,18 @@ export default function Page() {
 
       if (!response.ok) {
         setAuthError(data.error ?? "Authentication failed.");
+        return;
+      }
+
+      if (authMode === "signup") {
+        setAuthSuccess(
+          data.message ?? "Check your email to verify your account.",
+        );
+        setAuthMode("login");
+        setAuthFirstName("");
+        setAuthLastName("");
+        setAuthEmail("");
+        setAuthPassword("");
         return;
       }
 
@@ -922,6 +951,11 @@ export default function Page() {
                     />
                     {authError ? (
                       <p className="text-sm text-red-300">{authError}</p>
+                    ) : null}
+                    {authSuccess ? (
+                      <p className="rounded-[12px] border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                        {authSuccess}
+                      </p>
                     ) : null}
                     <button
                     className="h-11 rounded-full bg-[#c21872] px-4 text-sm font-semibold text-[var(--primary-foreground)] transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-60"

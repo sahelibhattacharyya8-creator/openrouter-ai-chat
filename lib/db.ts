@@ -12,7 +12,10 @@ export type User = {
   id: string;
   email: string;
   name: string | null;
+  emailVerified: boolean;
 };
+
+export type UserWithPassword = User & { passwordHash: string };
 
 export type ConversationSummary = {
   conversationId: string;
@@ -47,8 +50,33 @@ async function ensureSchema() {
         email TEXT NOT NULL UNIQUE,
         name TEXT,
         password_hash TEXT NOT NULL,
+        email_verified_at TIMESTAMPTZ,
+        email_verification_token_hash TEXT,
+        email_verification_expires_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
+    `;
+
+    await sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ
+    `;
+
+    await sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email_verification_token_hash TEXT
+    `;
+
+    await sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMPTZ
+    `;
+
+    await sql`
+      UPDATE users
+      SET email_verified_at = created_at
+      WHERE email_verified_at IS NULL
+        AND email_verification_token_hash IS NULL
     `;
 
     await sql`
@@ -106,10 +134,12 @@ export async function createUser({
   email,
   name,
   passwordHash,
+  verificationTokenHash,
 }: {
   email: string;
   name?: string;
   passwordHash: string;
+  verificationTokenHash: string;
 }) {
   if (!sql) {
     throw new Error("Database is not configured.");
@@ -120,12 +150,76 @@ export async function createUser({
   const id = crypto.randomUUID();
   const normalizedEmail = email.trim().toLowerCase();
   const rows = await sql`
-    INSERT INTO users (id, email, name, password_hash)
-    VALUES (${id}, ${normalizedEmail}, ${name?.trim() || null}, ${passwordHash})
-    RETURNING id, email, name
+    INSERT INTO users (
+      id,
+      email,
+      name,
+      password_hash,
+      email_verification_token_hash,
+      email_verification_expires_at
+    )
+    VALUES (
+      ${id},
+      ${normalizedEmail},
+      ${name?.trim() || null},
+      ${passwordHash},
+      ${verificationTokenHash},
+      NOW() + INTERVAL '24 hours'
+    )
+    RETURNING
+      id,
+      email,
+      name,
+      email_verified_at IS NOT NULL AS "emailVerified"
   `;
 
   return rows[0] as User;
+}
+
+export async function setEmailVerificationToken({
+  userId,
+  verificationTokenHash,
+}: {
+  userId: string;
+  verificationTokenHash: string;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    UPDATE users
+    SET
+      email_verification_token_hash = ${verificationTokenHash},
+      email_verification_expires_at = NOW() + INTERVAL '24 hours'
+    WHERE id = ${userId}
+    RETURNING id, email, name, email_verified_at IS NOT NULL AS "emailVerified"
+  `;
+
+  return (rows[0] as User | undefined) ?? null;
+}
+
+export async function verifyUserEmail(verificationTokenHash: string) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    UPDATE users
+    SET
+      email_verified_at = NOW(),
+      email_verification_token_hash = NULL,
+      email_verification_expires_at = NULL
+    WHERE email_verification_token_hash = ${verificationTokenHash}
+      AND email_verification_expires_at > NOW()
+    RETURNING id, email, name, TRUE AS "emailVerified"
+  `;
+
+  return (rows[0] as User | undefined) ?? null;
 }
 
 export async function getUserByEmail(email: string) {
@@ -136,15 +230,18 @@ export async function getUserByEmail(email: string) {
   await ensureSchema();
 
   const rows = await sql`
-    SELECT id, email, name, password_hash AS "passwordHash"
+    SELECT
+      id,
+      email,
+      name,
+      password_hash AS "passwordHash",
+      email_verified_at IS NOT NULL AS "emailVerified"
     FROM users
     WHERE email = ${email.trim().toLowerCase()}
     LIMIT 1
   `;
 
-  return (
-    (rows[0] as (User & { passwordHash: string }) | undefined) ?? null
-  );
+  return (rows[0] as UserWithPassword | undefined) ?? null;
 }
 
 export async function getUserById(id: string) {
@@ -155,7 +252,7 @@ export async function getUserById(id: string) {
   await ensureSchema();
 
   const rows = await sql`
-    SELECT id, email, name
+    SELECT id, email, name, email_verified_at IS NOT NULL AS "emailVerified"
     FROM users
     WHERE id = ${id}
     LIMIT 1

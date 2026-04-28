@@ -30,6 +30,13 @@ export async function POST(req: Request) {
     );
   }
 
+  if (!user.emailVerified) {
+    return Response.json(
+      { error: "Please verify your email before logging in." },
+      { status: 403 },
+    );
+  }
+
   await createSession(user);
 
   return Response.json({
