@@ -759,6 +759,45 @@ export default function Page() {
                     </button>
                   ))}
                 </div>
+                <div className="mx-auto mt-8 w-full max-w-2xl rounded-[22px] border border-pink-300/20 bg-[linear-gradient(180deg,#281d30_0%,#1a1420_100%)] p-5 text-left shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase text-pink-300">
+                        Pricing
+                      </p>
+                      <h2 className="mt-1 text-2xl font-semibold text-pink-50">
+                        Upgrade to Pro
+                      </h2>
+                      <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
+                        Test Razorpay checkout in sandbox mode and save the
+                        payment result to your database.
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-left sm:text-right">
+                      <div className="text-3xl font-semibold text-white">
+                        ₹499
+                      </div>
+                      <button
+                        className="mt-3 h-11 rounded-full bg-[linear-gradient(90deg,#c21872,#ff4fb3)] px-8 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,79,179,0.28)] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={billingPlan === "pro"}
+                        onClick={() => startCheckout("pro")}
+                        type="button"
+                      >
+                        {billingPlan === "pro" ? "Opening..." : "Join pro"}
+                      </button>
+                    </div>
+                  </div>
+                  {billingError ? (
+                    <p className="mt-4 rounded-[10px] border border-red-300/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+                      {billingError}
+                    </p>
+                  ) : null}
+                  {billingSuccess ? (
+                    <p className="mt-4 rounded-[10px] border border-emerald-300/20 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100">
+                      {billingSuccess}
+                    </p>
+                  ) : null}
+                </div>
                 </>
               ) : (
                 <div className="mx-auto mt-8 grid w-full max-w-4xl gap-6">
