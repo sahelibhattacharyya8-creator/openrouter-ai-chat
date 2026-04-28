@@ -394,7 +394,8 @@ export default function Page() {
 
       if (authMode === "signup") {
         setAuthSuccess(
-          data.message ?? "Check your email to verify your account.",
+          [data.message, data.warning].filter(Boolean).join(" ") ??
+            "Check your email to verify your account.",
         );
         setAuthMode("login");
         setAuthFirstName("");
