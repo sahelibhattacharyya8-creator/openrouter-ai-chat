@@ -81,6 +81,17 @@ export async function sendVerificationEmail({
 
   if (!response.ok) {
     const message = await response.text().catch(() => "");
-    throw new Error(`Could not send verification email. ${message}`);
+    let detail = message;
+
+    try {
+      const parsed = JSON.parse(message) as { message?: string; name?: string };
+      detail = parsed.message ?? parsed.name ?? message;
+    } catch {
+      detail = message;
+    }
+
+    throw new Error(
+      `Could not send verification email from ${from}. ${detail}`.trim(),
+    );
   }
 }
