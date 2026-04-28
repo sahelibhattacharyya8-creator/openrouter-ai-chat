@@ -1,4 +1,5 @@
 import type { User } from "@/lib/db";
+import nodemailer from "nodemailer";
 
 const verificationPath = "/api/auth/verify-email";
 
@@ -42,22 +43,31 @@ export async function sendVerificationEmail({
   user: User;
   verificationUrl: string;
 }) {
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM ?? "OpenRouter AI Chat <onboarding@resend.dev>";
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
+  const from =
+    process.env.EMAIL_FROM ??
+    (gmailUser ? `OpenRouter AI Chat <${gmailUser}>` : undefined);
 
-  if (!resendApiKey) {
-    console.warn("RESEND_API_KEY is missing. Verification link:", verificationUrl);
+  if (!gmailUser || !gmailAppPassword) {
+    console.warn(
+      "GMAIL_USER or GMAIL_APP_PASSWORD is missing. Verification link:",
+      verificationUrl,
+    );
     return;
   }
 
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${resendApiKey}`,
-      "Content-Type": "application/json",
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: gmailUser,
+      pass: gmailAppPassword,
     },
-    body: JSON.stringify({
-      from,
+  });
+
+  try {
+    await transporter.sendMail({
+      from: from ?? gmailUser,
       to: user.email,
       subject: "Verify your OpenRouter AI Chat account",
       html: `
@@ -76,22 +86,11 @@ export async function sendVerificationEmail({
         </div>
       `,
       text: `Verify your OpenRouter AI Chat account: ${verificationUrl}`,
-    }),
-  });
-
-  if (!response.ok) {
-    const message = await response.text().catch(() => "");
-    let detail = message;
-
-    try {
-      const parsed = JSON.parse(message) as { message?: string; name?: string };
-      detail = parsed.message ?? parsed.name ?? message;
-    } catch {
-      detail = message;
-    }
-
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `Could not send verification email from ${from}. ${detail}`.trim(),
+      `Could not send verification email with Gmail from ${gmailUser}. ${detail}`,
     );
   }
 }

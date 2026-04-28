@@ -13,6 +13,8 @@ import {
   sendVerificationEmail,
 } from "@/lib/email-verification";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   if (!isDatabaseConfigured()) {
     return Response.json(
@@ -82,7 +84,7 @@ export async function POST(req: Request) {
         {
           message:
             "Account created, but the verification email could not be sent. " +
-            "Check RESEND_API_KEY and EMAIL_FROM in Vercel, then try signup again.",
+            "Check GMAIL_USER and GMAIL_APP_PASSWORD in Vercel, then try signup again.",
           warning: detail,
         },
         { status: 202 },

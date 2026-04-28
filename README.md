@@ -24,8 +24,9 @@ OPENROUTER_APP_NAME=OpenRouter AI Chat
 DATABASE_URL=your_neon_postgres_url
 AUTH_SECRET=replace-with-a-long-random-secret
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-RESEND_API_KEY=re_your_resend_api_key
-EMAIL_FROM=OpenRouter AI Chat <onboarding@resend.dev>
+GMAIL_USER=your-gmail-address@gmail.com
+GMAIL_APP_PASSWORD=your-16-character-gmail-app-password
+EMAIL_FROM=OpenRouter AI Chat <your-gmail-address@gmail.com>
 RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_test_secret
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_your_key_id
@@ -37,7 +38,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 `DATABASE_URL` is optional for local development. When it is present, chat messages are saved to a `chat_messages` table that the app creates automatically.
 `AUTH_SECRET` signs login sessions. Use a long random value in production.
-`RESEND_API_KEY` and `EMAIL_FROM` send signup verification emails. Without `RESEND_API_KEY`, the app logs the verification link on the server instead of sending email.
+`GMAIL_USER`, `GMAIL_APP_PASSWORD`, and `EMAIL_FROM` send signup verification emails through Gmail SMTP. Use a Gmail App Password, not your normal Gmail password.
 Razorpay should be configured with test-mode keys while you are trying sandbox payments. `RAZORPAY_PRO_AMOUNT` is in paise, so `49900` means ₹499.
 
 ## Scripts
