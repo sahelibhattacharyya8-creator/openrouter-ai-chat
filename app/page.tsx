@@ -396,12 +396,43 @@ export default function Page() {
     }
 
     return new Promise<boolean>((resolve) => {
+      const existingScript = document.querySelector(
+        'script[src="https://checkout.razorpay.com/v1/checkout.js"]',
+      );
+
+      if (existingScript) {
+        window.setTimeout(() => resolve(Boolean(window.Razorpay)), 3000);
+        return;
+      }
+
       const script = document.createElement("script");
+      const timeout = window.setTimeout(() => resolve(false), 8000);
       script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
+      script.onload = () => {
+        window.clearTimeout(timeout);
+        resolve(true);
+      };
+      script.onerror = () => {
+        window.clearTimeout(timeout);
+        resolve(false);
+      };
       document.body.appendChild(script);
     });
+  }
+
+  async function fetchWithTimeout(
+    url: string,
+    options: RequestInit,
+    timeoutMs = 15000,
+  ) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      window.clearTimeout(timeout);
+    }
   }
 
   async function startCheckout(plan: "pro") {
@@ -417,12 +448,15 @@ export default function Page() {
         return;
       }
 
-      const response = await fetch("/api/billing/razorpay/order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      const data = await response.json();
+      const response = await fetchWithTimeout(
+        "/api/billing/razorpay/order",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan }),
+        },
+      );
+      const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
         setBillingError(data.error ?? "Could not start checkout.");
@@ -444,25 +478,43 @@ export default function Page() {
           color: "#c21872",
         },
         handler: async (paymentResponse) => {
-          const verifyResponse = await fetch("/api/billing/razorpay/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(paymentResponse),
-          });
-          const verifyData = await verifyResponse.json();
+          setBillingPlan(plan);
+          setBillingError("");
 
-          if (!verifyResponse.ok) {
-            setBillingError(
-              verifyData.error ?? "Payment verification failed.",
+          try {
+            const verifyResponse = await fetchWithTimeout(
+              "/api/billing/razorpay/verify",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(paymentResponse),
+              },
             );
-            return;
-          }
+            const verifyData = await verifyResponse.json().catch(() => ({}));
 
-          setBillingSuccess("Payment verified. Your Pro test payment is saved.");
+            if (!verifyResponse.ok) {
+              setBillingError(
+                verifyData.error ?? "Payment verification failed.",
+              );
+              return;
+            }
+
+            setBillingSuccess(
+              "Payment verified. Your Pro test payment is saved.",
+            );
+          } catch {
+            setBillingError("Payment verification timed out. Please try again.");
+          } finally {
+            setBillingPlan(null);
+          }
         },
       });
 
       checkout.open();
+    } catch {
+      setBillingError(
+        "Razorpay is taking too long to respond. Check your test keys and try again.",
+      );
     } finally {
       setBillingPlan(null);
     }

@@ -2,6 +2,8 @@ import Razorpay from "razorpay";
 import { getCurrentUser } from "@/lib/auth";
 import { createPaymentRecord, isDatabaseConfigured } from "@/lib/db";
 
+export const runtime = "nodejs";
+
 const planAmounts = {
   pro: Number(process.env.RAZORPAY_PRO_AMOUNT ?? 49900),
 } as const;
@@ -38,38 +40,50 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid billing plan." }, { status: 400 });
   }
 
-  const razorpay = new Razorpay({
-    key_id: keyId,
-    key_secret: keySecret,
-  });
-  const amount = planAmounts[plan];
-  const receipt = `openrouter-${plan}-${Date.now()}`;
-  const order = await razorpay.orders.create({
-    amount,
-    currency,
-    receipt,
-    notes: {
+  try {
+    const razorpay = new Razorpay({
+      key_id: keyId,
+      key_secret: keySecret,
+    });
+    const amount = planAmounts[plan];
+    const receipt = `openrouter-${plan}-${Date.now()}`;
+    const order = await razorpay.orders.create({
+      amount,
+      currency,
+      receipt,
+      notes: {
+        userId: user.id,
+        plan,
+      },
+    });
+
+    await createPaymentRecord({
       userId: user.id,
       plan,
-    },
-  });
+      providerOrderId: order.id,
+      amount,
+      currency,
+      status: "created",
+    });
 
-  await createPaymentRecord({
-    userId: user.id,
-    plan,
-    providerOrderId: order.id,
-    amount,
-    currency,
-    status: "created",
-  });
+    return Response.json({
+      orderId: order.id,
+      amount,
+      currency,
+      keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? keyId,
+      name: user.name ?? "OpenRouter AI Chat",
+      email: user.email,
+      plan,
+    });
+  } catch (error) {
+    console.error("Failed to create Razorpay order", error);
 
-  return Response.json({
-    orderId: order.id,
-    amount,
-    currency,
-    keyId: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? keyId,
-    name: user.name ?? "OpenRouter AI Chat",
-    email: user.email,
-    plan,
-  });
+    return Response.json(
+      {
+        error:
+          "Razorpay could not create an order. Check your test key ID and secret.",
+      },
+      { status: 500 },
+    );
+  }
 }

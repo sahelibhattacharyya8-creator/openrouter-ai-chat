@@ -2,6 +2,8 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { getCurrentUser } from "@/lib/auth";
 import { updatePaymentRecord } from "@/lib/db";
 
+export const runtime = "nodejs";
+
 export async function POST(req: Request) {
   const user = await getCurrentUser();
 
