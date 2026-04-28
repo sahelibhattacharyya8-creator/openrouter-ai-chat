@@ -65,10 +65,29 @@ export async function POST(req: Request) {
       verificationTokenHash,
     });
 
-    await sendVerificationEmail({
-      user,
-      verificationUrl: createVerificationUrl(verificationToken),
-    });
+    try {
+      await sendVerificationEmail({
+        user,
+        verificationUrl: createVerificationUrl(verificationToken),
+      });
+    } catch (sendError) {
+      const detail =
+        sendError instanceof Error
+          ? sendError.message
+          : "Could not send verification email.";
+
+      console.error("Verification email failed", sendError);
+
+      return Response.json(
+        {
+          message:
+            "Account created, but the verification email could not be sent. " +
+            "Check RESEND_API_KEY and EMAIL_FROM in Vercel, then try signup again.",
+          warning: detail,
+        },
+        { status: 202 },
+      );
+    }
 
     return Response.json({
       message: "Check your email to verify your account before logging in.",
