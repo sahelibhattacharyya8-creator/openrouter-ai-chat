@@ -2,6 +2,7 @@ import type { User } from "@/lib/db";
 import nodemailer from "nodemailer";
 
 const verificationPath = "/api/auth/verify-email";
+const passwordResetPath = "/";
 
 function getAppUrl() {
   return (
@@ -36,12 +37,22 @@ export function createVerificationUrl(token: string) {
   return url.toString();
 }
 
-export async function sendVerificationEmail({
+export function createPasswordResetUrl(token: string) {
+  const url = new URL(passwordResetPath, getAppUrl());
+  url.searchParams.set("resetToken", token);
+  return url.toString();
+}
+
+async function sendAuthEmail({
   user,
-  verificationUrl,
+  subject,
+  html,
+  text,
 }: {
   user: User;
-  verificationUrl: string;
+  subject: string;
+  html: string;
+  text: string;
 }) {
   const gmailUser = process.env.GMAIL_USER;
   const gmailAppPassword = process.env.GMAIL_APP_PASSWORD;
@@ -51,8 +62,8 @@ export async function sendVerificationEmail({
 
   if (!gmailUser || !gmailAppPassword) {
     console.warn(
-      "GMAIL_USER or GMAIL_APP_PASSWORD is missing. Verification link:",
-      verificationUrl,
+      "GMAIL_USER or GMAIL_APP_PASSWORD is missing. Email text:",
+      text,
     );
     return;
   }
@@ -69,8 +80,29 @@ export async function sendVerificationEmail({
     await transporter.sendMail({
       from: from ?? gmailUser,
       to: user.email,
-      subject: "Verify your OpenRouter AI Chat account",
-      html: `
+      subject,
+      html,
+      text,
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Could not send auth email with Gmail from ${gmailUser}. ${detail}`,
+    );
+  }
+}
+
+export async function sendVerificationEmail({
+  user,
+  verificationUrl,
+}: {
+  user: User;
+  verificationUrl: string;
+}) {
+  await sendAuthEmail({
+    user,
+    subject: "Verify your OpenRouter AI Chat account",
+    html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6;color:#211927">
           <h1 style="font-size:22px">Verify your email</h1>
           <p>Hi ${user.name || "there"},</p>
@@ -85,12 +117,35 @@ export async function sendVerificationEmail({
           <p><a href="${verificationUrl}">${verificationUrl}</a></p>
         </div>
       `,
-      text: `Verify your OpenRouter AI Chat account: ${verificationUrl}`,
-    });
-  } catch (error) {
-    const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(
-      `Could not send verification email with Gmail from ${gmailUser}. ${detail}`,
-    );
-  }
+    text: `Verify your OpenRouter AI Chat account: ${verificationUrl}`,
+  });
+}
+
+export async function sendPasswordResetEmail({
+  user,
+  resetUrl,
+}: {
+  user: User;
+  resetUrl: string;
+}) {
+  await sendAuthEmail({
+    user,
+    subject: "Reset your OpenRouter AI Chat password",
+    html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#211927">
+          <h1 style="font-size:22px">Reset your password</h1>
+          <p>Hi ${user.name || "there"},</p>
+          <p>Click the button below to set a new OpenRouter AI Chat password.</p>
+          <p>
+            <a href="${resetUrl}" style="display:inline-block;background:#c21872;color:white;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:700">
+              Reset password
+            </a>
+          </p>
+          <p>This link expires in 1 hour.</p>
+          <p>If the button does not work, copy and paste this link into your browser:</p>
+          <p><a href="${resetUrl}">${resetUrl}</a></p>
+        </div>
+      `,
+    text: `Reset your OpenRouter AI Chat password: ${resetUrl}`,
+  });
 }

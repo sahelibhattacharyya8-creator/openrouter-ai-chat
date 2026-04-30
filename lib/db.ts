@@ -53,6 +53,8 @@ async function ensureSchema() {
         email_verified_at TIMESTAMPTZ,
         email_verification_token_hash TEXT,
         email_verification_expires_at TIMESTAMPTZ,
+        password_reset_token_hash TEXT,
+        password_reset_expires_at TIMESTAMPTZ,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
@@ -70,6 +72,16 @@ async function ensureSchema() {
     await sql`
       ALTER TABLE users
       ADD COLUMN IF NOT EXISTS email_verification_expires_at TIMESTAMPTZ
+    `;
+
+    await sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS password_reset_token_hash TEXT
+    `;
+
+    await sql`
+      ALTER TABLE users
+      ADD COLUMN IF NOT EXISTS password_reset_expires_at TIMESTAMPTZ
     `;
 
     await sql`
@@ -217,6 +229,58 @@ export async function verifyUserEmail(verificationTokenHash: string) {
     WHERE email_verification_token_hash = ${verificationTokenHash}
       AND email_verification_expires_at > NOW()
     RETURNING id, email, name, TRUE AS "emailVerified"
+  `;
+
+  return (rows[0] as User | undefined) ?? null;
+}
+
+export async function setPasswordResetToken({
+  userId,
+  resetTokenHash,
+}: {
+  userId: string;
+  resetTokenHash: string;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    UPDATE users
+    SET
+      password_reset_token_hash = ${resetTokenHash},
+      password_reset_expires_at = NOW() + INTERVAL '1 hour'
+    WHERE id = ${userId}
+    RETURNING id, email, name, email_verified_at IS NOT NULL AS "emailVerified"
+  `;
+
+  return (rows[0] as User | undefined) ?? null;
+}
+
+export async function resetPasswordByToken({
+  resetTokenHash,
+  passwordHash,
+}: {
+  resetTokenHash: string;
+  passwordHash: string;
+}) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    UPDATE users
+    SET
+      password_hash = ${passwordHash},
+      password_reset_token_hash = NULL,
+      password_reset_expires_at = NULL
+    WHERE password_reset_token_hash = ${resetTokenHash}
+      AND password_reset_expires_at > NOW()
+    RETURNING id, email, name, email_verified_at IS NOT NULL AS "emailVerified"
   `;
 
   return (rows[0] as User | undefined) ?? null;

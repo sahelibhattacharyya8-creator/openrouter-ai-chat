@@ -127,11 +127,14 @@ export default function Page() {
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
   const [chatId, setChatId] = useState(() => crypto.randomUUID());
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [authMode, setAuthMode] = useState<
+    "login" | "signup" | "forgot" | "reset"
+  >("login");
   const [authFirstName, setAuthFirstName] = useState("");
   const [authLastName, setAuthLastName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [passwordResetToken, setPasswordResetToken] = useState("");
   const [authError, setAuthError] = useState("");
   const [authSuccess, setAuthSuccess] = useState("");
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -201,6 +204,9 @@ export default function Page() {
     const verified = new URLSearchParams(window.location.search).get(
       "verified",
     );
+    const resetToken = new URLSearchParams(window.location.search).get(
+      "resetToken",
+    );
 
     if (verified === "success") {
       setAuthSuccess("Email verified. You are logged in now.");
@@ -210,6 +216,13 @@ export default function Page() {
       window.history.replaceState(null, "", window.location.pathname);
     } else if (verified === "missing") {
       setAuthError("Verification link is missing a token.");
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+
+    if (resetToken) {
+      setPasswordResetToken(resetToken);
+      setAuthMode("reset");
+      setAuthSuccess("Enter a new password for your account.");
       window.history.replaceState(null, "", window.location.pathname);
     }
 
@@ -376,14 +389,27 @@ export default function Page() {
     setIsAuthLoading(true);
 
     try {
-      const response = await fetch(`/api/auth/${authMode}`, {
+      const authEndpoint =
+        authMode === "forgot"
+          ? "forgot-password"
+          : authMode === "reset"
+            ? "reset-password"
+            : authMode;
+      const requestBody =
+        authMode === "forgot"
+          ? { email: authEmail }
+          : authMode === "reset"
+            ? { token: passwordResetToken, password: authPassword }
+            : {
+                email: authEmail,
+                name: `${authFirstName.trim()} ${authLastName.trim()}`.trim(),
+                password: authPassword,
+              };
+
+      const response = await fetch(`/api/auth/${authEndpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: authEmail,
-          name: `${authFirstName.trim()} ${authLastName.trim()}`.trim(),
-          password: authPassword,
-        }),
+        body: JSON.stringify(requestBody),
       });
       const data = await response.json();
 
@@ -401,6 +427,20 @@ export default function Page() {
         setAuthFirstName("");
         setAuthLastName("");
         setAuthEmail("");
+        setAuthPassword("");
+        return;
+      }
+
+      if (authMode === "forgot") {
+        setAuthSuccess(data.message ?? "Check your email for a reset link.");
+        setAuthMode("login");
+        setAuthEmail("");
+        return;
+      }
+
+      if (authMode === "reset") {
+        setUser(data.user);
+        setPasswordResetToken("");
         setAuthPassword("");
         return;
       }
@@ -911,6 +951,16 @@ export default function Page() {
                         Sign up
                       </button>
                     </div>
+                    {authMode === "forgot" ? (
+                      <div className="rounded-[16px] border border-pink-300/15 bg-[#120e16]/70 px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+                        Enter your email and we will send a password reset link.
+                      </div>
+                    ) : null}
+                    {authMode === "reset" ? (
+                      <div className="rounded-[16px] border border-pink-300/15 bg-[#120e16]/70 px-4 py-3 text-sm leading-6 text-[var(--muted)]">
+                        Create a new password. It must be at least 8 characters.
+                      </div>
+                    ) : null}
                     {authMode === "signup" ? (
                       <div className="grid gap-3 sm:grid-cols-2">
                         <input
@@ -933,23 +983,31 @@ export default function Page() {
                         />
                       </div>
                     ) : null}
-                    <input
-                      className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                      onChange={(event) => setAuthEmail(event.target.value)}
-                      placeholder="Email"
-                      required
-                      type="email"
-                      value={authEmail}
-                    />
-                    <input
-                      className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                      minLength={8}
-                      onChange={(event) => setAuthPassword(event.target.value)}
-                      placeholder="Password"
-                      required
-                      type="password"
-                      value={authPassword}
-                    />
+                    {authMode !== "reset" ? (
+                      <input
+                        className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                        onChange={(event) => setAuthEmail(event.target.value)}
+                        placeholder="Email"
+                        required
+                        type="email"
+                        value={authEmail}
+                      />
+                    ) : null}
+                    {authMode !== "forgot" ? (
+                      <input
+                        className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                        minLength={8}
+                        onChange={(event) =>
+                          setAuthPassword(event.target.value)
+                        }
+                        placeholder={
+                          authMode === "reset" ? "New password" : "Password"
+                        }
+                        required
+                        type="password"
+                        value={authPassword}
+                      />
+                    ) : null}
                     {authError ? (
                       <p className="text-sm text-red-300">{authError}</p>
                     ) : null}
@@ -963,8 +1021,41 @@ export default function Page() {
                       disabled={isAuthLoading}
                       type="submit"
                     >
-                      {authMode === "login" ? "Login" : "Create account"}
+                      {authMode === "login"
+                        ? "Login"
+                        : authMode === "signup"
+                          ? "Create account"
+                          : authMode === "forgot"
+                            ? "Send reset email"
+                            : "Reset password"}
                     </button>
+                    {authMode === "login" ? (
+                      <button
+                        className="text-sm font-medium text-pink-200 transition hover:text-pink-100"
+                        onClick={() => {
+                          setAuthError("");
+                          setAuthSuccess("");
+                          setAuthMode("forgot");
+                        }}
+                        type="button"
+                      >
+                        Forgot password?
+                      </button>
+                    ) : authMode === "forgot" || authMode === "reset" ? (
+                      <button
+                        className="text-sm font-medium text-pink-200 transition hover:text-pink-100"
+                        onClick={() => {
+                          setAuthError("");
+                          setAuthSuccess("");
+                          setAuthPassword("");
+                          setPasswordResetToken("");
+                          setAuthMode("login");
+                        }}
+                        type="button"
+                      >
+                        Back to login
+                      </button>
+                    ) : null}
                   </form>
 
                   <div className="rounded-[18px] border border-white/10 bg-[#211927]/80 p-5 shadow-[0_28px_90px_rgba(0,0,0,0.28)]">
