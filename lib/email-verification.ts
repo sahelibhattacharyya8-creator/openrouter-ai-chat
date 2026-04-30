@@ -149,3 +149,42 @@ export async function sendPasswordResetEmail({
     text: `Reset your OpenRouter AI Chat password: ${resetUrl}`,
   });
 }
+
+export async function sendPaymentSuccessEmail({
+  user,
+  plan,
+  amount,
+  currency,
+  paymentId,
+}: {
+  user: User;
+  plan: string;
+  amount: number;
+  currency: string;
+  paymentId: string;
+}) {
+  const formattedAmount = new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+  }).format(amount / 100);
+  const planName = plan.charAt(0).toUpperCase() + plan.slice(1);
+
+  await sendAuthEmail({
+    user,
+    subject: "Payment successful - OpenRouter AI Chat",
+    html: `
+        <div style="font-family:Arial,sans-serif;line-height:1.6;color:#211927">
+          <h1 style="font-size:22px">Payment successful</h1>
+          <p>Hi ${user.name || "there"},</p>
+          <p>Your ${planName} test payment was completed successfully.</p>
+          <div style="border:1px solid #ead7e4;border-radius:14px;padding:14px;margin:18px 0;background:#fff7fb">
+            <p style="margin:0 0 8px"><strong>Plan:</strong> ${planName}</p>
+            <p style="margin:0 0 8px"><strong>Amount:</strong> ${formattedAmount}</p>
+            <p style="margin:0"><strong>Payment ID:</strong> ${paymentId}</p>
+          </div>
+          <p>Thank you for using OpenRouter AI Chat.</p>
+        </div>
+      `,
+    text: `Payment successful for OpenRouter AI Chat. Plan: ${planName}. Amount: ${formattedAmount}. Payment ID: ${paymentId}.`,
+  });
+}

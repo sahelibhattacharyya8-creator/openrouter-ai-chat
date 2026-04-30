@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { getCurrentUser } from "@/lib/auth";
 import { updatePaymentRecord } from "@/lib/db";
+import { sendPaymentSuccessEmail } from "@/lib/email-verification";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,20 @@ export async function POST(req: Request) {
     providerPaymentId: paymentId,
     status: "paid",
   });
+
+  if (payment) {
+    try {
+      await sendPaymentSuccessEmail({
+        user,
+        plan: payment.plan,
+        amount: payment.amount,
+        currency: payment.currency,
+        paymentId,
+      });
+    } catch (error) {
+      console.error("Failed to send payment success email", error);
+    }
+  }
 
   return Response.json({ ok: true, payment });
 }

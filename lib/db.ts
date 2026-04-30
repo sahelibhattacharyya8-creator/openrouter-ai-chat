@@ -556,8 +556,18 @@ export async function updatePaymentRecord({
       status = ${status},
       updated_at = NOW()
     WHERE provider_order_id = ${providerOrderId}
-    RETURNING id, plan, status
+    RETURNING id, plan, status, amount, currency
   `;
 
-  return (rows[0] as { id: number; plan: string; status: string } | undefined) ?? null;
+  return (
+    (rows[0] as
+      | {
+          id: number;
+          plan: string;
+          status: string;
+          amount: number;
+          currency: string;
+        }
+      | undefined) ?? null
+  );
 }
