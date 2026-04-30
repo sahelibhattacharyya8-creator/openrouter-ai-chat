@@ -8,6 +8,8 @@ import {
   Check,
   Code2,
   Compass,
+  Eye,
+  EyeOff,
   GraduationCap,
   Library,
   LoaderCircle,
@@ -134,6 +136,7 @@ export default function Page() {
   const [authLastName, setAuthLastName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [showAuthPassword, setShowAuthPassword] = useState(false);
   const [passwordResetToken, setPasswordResetToken] = useState("");
   const [authError, setAuthError] = useState("");
   const [authSuccess, setAuthSuccess] = useState("");
@@ -994,19 +997,44 @@ export default function Page() {
                       />
                     ) : null}
                     {authMode !== "forgot" ? (
-                      <input
-                        className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
-                        minLength={8}
-                        onChange={(event) =>
-                          setAuthPassword(event.target.value)
-                        }
-                        placeholder={
-                          authMode === "reset" ? "New password" : "Password"
-                        }
-                        required
-                        type="password"
-                        value={authPassword}
-                      />
+                      <div className="relative">
+                        <input
+                          className="h-11 w-full rounded-full border border-white/10 bg-[#120e16] px-4 pr-12 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                          minLength={8}
+                          onChange={(event) =>
+                            setAuthPassword(event.target.value)
+                          }
+                          placeholder={
+                            authMode === "reset" ? "New password" : "Password"
+                          }
+                          required
+                          type={showAuthPassword ? "text" : "password"}
+                          value={authPassword}
+                        />
+                        <button
+                          aria-label={
+                            showAuthPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                          className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#9d8da8] transition hover:bg-white/8 hover:text-pink-100"
+                          onClick={() =>
+                            setShowAuthPassword((current) => !current)
+                          }
+                          title={
+                            showAuthPassword
+                              ? "Hide password"
+                              : "Show password"
+                          }
+                          type="button"
+                        >
+                          {showAuthPassword ? (
+                            <EyeOff aria-hidden="true" className="h-4 w-4" />
+                          ) : (
+                            <Eye aria-hidden="true" className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                     ) : null}
                     {authError ? (
                       <p className="text-sm text-red-300">{authError}</p>
@@ -1048,6 +1076,7 @@ export default function Page() {
                           setAuthError("");
                           setAuthSuccess("");
                           setAuthPassword("");
+                          setShowAuthPassword(false);
                           setPasswordResetToken("");
                           setAuthMode("login");
                         }}
