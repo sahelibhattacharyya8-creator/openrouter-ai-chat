@@ -136,7 +136,10 @@ export default function Page() {
   const [authLastName, setAuthLastName] = useState("");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showAuthPassword, setShowAuthPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [passwordResetToken, setPasswordResetToken] = useState("");
   const [authError, setAuthError] = useState("");
   const [authSuccess, setAuthSuccess] = useState("");
@@ -226,7 +229,18 @@ export default function Page() {
       setPasswordResetToken(resetToken);
       setAuthMode("reset");
       setAuthSuccess("Enter a new password for your account.");
+      setAuthPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setShowAuthPassword(false);
+      setShowNewPassword(false);
       window.history.replaceState(null, "", window.location.pathname);
+
+      window.setTimeout(() => {
+        setAuthPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+      }, 100);
     }
 
     async function loadUser() {
@@ -391,6 +405,12 @@ export default function Page() {
     setAuthSuccess("");
     setIsAuthLoading(true);
 
+    if (authMode === "reset" && newPassword !== confirmNewPassword) {
+      setAuthError("New password and confirm password do not match.");
+      setIsAuthLoading(false);
+      return;
+    }
+
     try {
       const authEndpoint =
         authMode === "forgot"
@@ -402,7 +422,11 @@ export default function Page() {
         authMode === "forgot"
           ? { email: authEmail }
           : authMode === "reset"
-            ? { token: passwordResetToken, password: authPassword }
+            ? {
+                token: passwordResetToken,
+                password: newPassword,
+                confirmPassword: confirmNewPassword,
+              }
             : {
                 email: authEmail,
                 name: `${authFirstName.trim()} ${authLastName.trim()}`.trim(),
@@ -445,6 +469,8 @@ export default function Page() {
         setUser(data.user);
         setPasswordResetToken("");
         setAuthPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
         return;
       }
 
@@ -927,6 +953,7 @@ export default function Page() {
               ) : (
                 <div className="mx-auto mt-8 grid w-full max-w-4xl gap-6">
                   <form
+                    autoComplete={authMode === "reset" ? "off" : "on"}
                     className="mx-auto grid w-full max-w-md gap-3 rounded-[24px] border border-white/10 bg-[#1d1722]/95 p-4 shadow-[0_30px_90px_rgba(0,0,0,0.35)]"
                     onSubmit={submitAuth}
                   >
@@ -961,7 +988,7 @@ export default function Page() {
                     ) : null}
                     {authMode === "reset" ? (
                       <div className="rounded-[16px] border border-pink-300/15 bg-[#120e16]/70 px-4 py-3 text-sm leading-6 text-[var(--muted)]">
-                        Create a new password. It must be at least 8 characters.
+                        Create a new password and confirm it below.
                       </div>
                     ) : null}
                     {authMode === "signup" ? (
@@ -989,6 +1016,8 @@ export default function Page() {
                     {authMode !== "reset" ? (
                       <input
                         className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                        autoComplete="email"
+                        name="email"
                         onChange={(event) => setAuthEmail(event.target.value)}
                         placeholder="Email"
                         required
@@ -996,17 +1025,81 @@ export default function Page() {
                         value={authEmail}
                       />
                     ) : null}
-                    {authMode !== "forgot" ? (
+                    {authMode === "reset" ? (
+                      <>
+                        <div className="relative">
+                          <input
+                            autoComplete="new-password"
+                            className="h-11 w-full rounded-full border border-white/10 bg-[#120e16] px-4 pr-12 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                            minLength={8}
+                            name={`new-password-${passwordResetToken.slice(0, 8)}`}
+                            onChange={(event) =>
+                              setNewPassword(event.target.value)
+                            }
+                            placeholder="New password"
+                            required
+                            type={showNewPassword ? "text" : "password"}
+                            value={newPassword}
+                          />
+                          <button
+                            aria-label={
+                              showNewPassword
+                                ? "Hide new password"
+                                : "Show new password"
+                            }
+                            className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-[#9d8da8] transition hover:bg-white/8 hover:text-pink-100"
+                            onClick={() =>
+                              setShowNewPassword((current) => !current)
+                            }
+                            title={
+                              showNewPassword
+                                ? "Hide new password"
+                                : "Show new password"
+                            }
+                            type="button"
+                          >
+                            {showNewPassword ? (
+                              <EyeOff aria-hidden="true" className="h-4 w-4" />
+                            ) : (
+                              <Eye aria-hidden="true" className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                        <div className="relative">
+                          <input
+                            autoComplete="new-password"
+                            className="h-11 w-full rounded-full border border-white/10 bg-[#120e16] px-4 pr-12 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                            minLength={8}
+                            name={`confirm-password-${passwordResetToken.slice(0, 8)}`}
+                            onChange={(event) =>
+                              setConfirmNewPassword(event.target.value)
+                            }
+                            placeholder="Confirm new password"
+                            required
+                            type={showNewPassword ? "text" : "password"}
+                            value={confirmNewPassword}
+                          />
+                        </div>
+                      </>
+                    ) : authMode !== "forgot" ? (
                       <div className="relative">
                         <input
+                          autoComplete={
+                            authMode === "login"
+                              ? "current-password"
+                              : "new-password"
+                          }
                           className="h-11 w-full rounded-full border border-white/10 bg-[#120e16] px-4 pr-12 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
                           minLength={8}
+                          name={
+                            authMode === "login"
+                              ? "current-password"
+                              : "signup-password"
+                          }
                           onChange={(event) =>
                             setAuthPassword(event.target.value)
                           }
-                          placeholder={
-                            authMode === "reset" ? "New password" : "Password"
-                          }
+                          placeholder="Password"
                           required
                           type={showAuthPassword ? "text" : "password"}
                           value={authPassword}
@@ -1076,7 +1169,10 @@ export default function Page() {
                           setAuthError("");
                           setAuthSuccess("");
                           setAuthPassword("");
+                          setNewPassword("");
+                          setConfirmNewPassword("");
                           setShowAuthPassword(false);
+                          setShowNewPassword(false);
                           setPasswordResetToken("");
                           setAuthMode("login");
                         }}

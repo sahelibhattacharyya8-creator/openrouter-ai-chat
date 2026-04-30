@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { token, password } = await req.json();
+  const { token, password, confirmPassword } = await req.json();
 
   if (!token || !password) {
     return Response.json(
@@ -23,6 +23,13 @@ export async function POST(req: Request) {
   if (password.length < 8) {
     return Response.json(
       { error: "Password must be at least 8 characters." },
+      { status: 400 },
+    );
+  }
+
+  if (confirmPassword !== undefined && password !== confirmPassword) {
+    return Response.json(
+      { error: "New password and confirm password do not match." },
       { status: 400 },
     );
   }
