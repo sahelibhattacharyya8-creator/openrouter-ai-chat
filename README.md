@@ -23,7 +23,9 @@ OPENROUTER_SITE_URL=http://localhost:3000
 OPENROUTER_APP_NAME=OpenRouter AI Chat
 DATABASE_URL=your_neon_postgres_url
 AUTH_SECRET=replace-with-a-long-random-secret
-ADMIN_EMAILS=admin@example.com
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=change-this-admin-password
+ADMIN_AUTH_SECRET=replace-with-a-long-random-admin-secret
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 GMAIL_USER=your-gmail-address@gmail.com
 GMAIL_APP_PASSWORD=your-16-character-gmail-app-password
@@ -39,7 +41,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 `DATABASE_URL` is optional for local development. When it is present, chat messages are saved to a `chat_messages` table that the app creates automatically.
 `AUTH_SECRET` signs login sessions. Use a long random value in production.
-`ADMIN_EMAILS` is a comma-separated list of email addresses allowed to open the admin panel.
+`ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_AUTH_SECRET` protect the separate `/admin` console. These admin credentials are separate from customer accounts.
 `GMAIL_USER`, `GMAIL_APP_PASSWORD`, and `EMAIL_FROM` send signup verification emails through Gmail SMTP. Use a Gmail App Password, not your normal Gmail password.
 Razorpay should be configured with test-mode keys while you are trying sandbox payments. `RAZORPAY_PRO_AMOUNT` is in paise, so `49900` means ₹499.
 

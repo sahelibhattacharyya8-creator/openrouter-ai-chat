@@ -1,12 +1,5 @@
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentAdmin } from "@/lib/admin-auth";
 import { getAdminPayments, getAdminUsers, isDatabaseConfigured } from "@/lib/db";
-
-function getAdminEmails() {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 export async function GET() {
   if (!isDatabaseConfigured()) {
@@ -16,15 +9,9 @@ export async function GET() {
     );
   }
 
-  const user = await getCurrentUser();
+  const admin = await getCurrentAdmin();
 
-  if (!user) {
-    return Response.json({ error: "Please login first." }, { status: 401 });
-  }
-
-  const adminEmails = getAdminEmails();
-
-  if (!adminEmails.includes(user.email.toLowerCase())) {
+  if (!admin) {
     return Response.json({ error: "Admin access required." }, { status: 403 });
   }
 
@@ -33,5 +20,5 @@ export async function GET() {
     getAdminPayments(),
   ]);
 
-  return Response.json({ users, payments });
+  return Response.json({ admin, users, payments });
 }

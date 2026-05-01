@@ -8,7 +8,6 @@ import {
   Check,
   Code2,
   Compass,
-  CreditCard,
   Eye,
   EyeOff,
   GraduationCap,
@@ -21,7 +20,6 @@ import {
   Pencil,
   Search,
   Send,
-  ShieldCheck,
   Sparkles,
   Square,
   Trash2,
@@ -126,35 +124,6 @@ type StoredChatMessage = {
   content: string;
 };
 
-type AdminUser = {
-  id: string;
-  email: string;
-  name: string | null;
-  emailVerified: boolean;
-  createdAt: string;
-};
-
-type AdminPayment = {
-  id: number;
-  userId: string;
-  userEmail: string | null;
-  userName: string | null;
-  provider: string;
-  plan: string;
-  providerOrderId: string;
-  providerPaymentId: string | null;
-  amount: number;
-  currency: string;
-  status: "created" | "paid" | "failed";
-  createdAt: string;
-  updatedAt: string;
-};
-
-type AdminData = {
-  users: AdminUser[];
-  payments: AdminPayment[];
-};
-
 export default function Page() {
   const conversationRef = useRef<HTMLDivElement | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement | null>(null);
@@ -181,10 +150,6 @@ export default function Page() {
   const [billingError, setBillingError] = useState("");
   const [billingSuccess, setBillingSuccess] = useState("");
   const [billingPlan, setBillingPlan] = useState<string | null>(null);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [adminData, setAdminData] = useState<AdminData | null>(null);
-  const [adminError, setAdminError] = useState("");
-  const [isAdminLoading, setIsAdminLoading] = useState(false);
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModelId>(DEFAULT_CHAT_MODEL);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -223,13 +188,6 @@ export default function Page() {
         .join(""),
     )
     .join("");
-  const totalPaidAmount =
-    adminData?.payments.reduce(
-      (total, payment) =>
-        payment.status === "paid" ? total + payment.amount : total,
-      0,
-    ) ?? 0;
-
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const conversation = conversationRef.current;
@@ -315,7 +273,7 @@ export default function Page() {
   function submitMessage(text = input) {
     const trimmed = text.trim();
 
-    if (!trimmed || isBusy || !user || isAdminPanelOpen) {
+    if (!trimmed || isBusy || !user) {
       return;
     }
 
@@ -337,7 +295,6 @@ export default function Page() {
     const data: { messages?: StoredChatMessage[] } = await response.json();
 
     setActiveConversationId(conversationId);
-    setIsAdminPanelOpen(false);
     setIsSidebarOpen(false);
     setMessages(
       (data.messages ?? []).map((message) => ({
@@ -357,47 +314,7 @@ export default function Page() {
     setOpenConversationMenuId(null);
     setEditingConversationId(null);
     setEditingConversationTitle("");
-    setIsAdminPanelOpen(false);
     setIsSidebarOpen(false);
-  }
-
-  async function openAdminPanel() {
-    setIsAdminPanelOpen(true);
-    setIsSidebarOpen(false);
-    setAdminError("");
-    setIsAdminLoading(true);
-
-    try {
-      const response = await fetch("/api/admin");
-      const data = await response.json();
-
-      if (!response.ok) {
-        setAdminError(data.error ?? "Could not load admin panel.");
-        setAdminData(null);
-        return;
-      }
-
-      setAdminData(data);
-    } catch {
-      setAdminError("Could not load admin panel.");
-      setAdminData(null);
-    } finally {
-      setIsAdminLoading(false);
-    }
-  }
-
-  function formatMoney(amount: number, currency: string) {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency,
-    }).format(amount / 100);
-  }
-
-  function formatDate(value: string) {
-    return new Intl.DateTimeFormat("en-IN", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(new Date(value));
   }
 
   function startRenamingConversation(conversation: ConversationSummary) {
@@ -743,21 +660,6 @@ export default function Page() {
           New Chat
         </button>
 
-        {user ? (
-          <button
-            className={`mt-2 inline-flex h-10 items-center justify-center gap-2 rounded-[8px] border px-3 text-sm font-semibold transition ${
-              isAdminPanelOpen
-                ? "border-pink-300/45 bg-white/10 text-pink-100"
-                : "border-white/10 bg-white/[0.04] text-[var(--muted)] hover:border-pink-300/35 hover:text-pink-100"
-            }`}
-            onClick={openAdminPanel}
-            type="button"
-          >
-            <ShieldCheck aria-hidden="true" className="h-4 w-4" />
-            Admin Panel
-          </button>
-        ) : null}
-
         <label className="mt-5 flex h-11 items-center gap-2 border-b border-[var(--border)] px-2 text-sm text-[var(--muted)]">
           <Search aria-hidden="true" className="h-4 w-4" />
           <input
@@ -959,169 +861,6 @@ export default function Page() {
           </div>
         </header>
 
-        {isAdminPanelOpen ? (
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-8 sm:px-6">
-            <div className="mx-auto max-w-6xl py-8">
-              <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase text-pink-300">
-                    Admin
-                  </p>
-                  <h1 className="mt-1 text-3xl font-semibold text-pink-50">
-                    Admin panel
-                  </h1>
-                  <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-                    View registered users and Razorpay payment records.
-                  </p>
-                </div>
-                <button
-                  className="h-10 rounded-full border border-pink-300/25 bg-white/[0.04] px-5 text-sm font-semibold text-pink-100 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
-                  disabled={isAdminLoading}
-                  onClick={openAdminPanel}
-                  type="button"
-                >
-                  {isAdminLoading ? "Refreshing..." : "Refresh"}
-                </button>
-              </div>
-
-              {adminError ? (
-                <div className="rounded-[14px] border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                  {adminError}
-                </div>
-              ) : null}
-
-              {isAdminLoading ? (
-                <div className="flex items-center gap-2 rounded-[14px] border border-white/10 bg-[#211927]/80 px-4 py-3 text-sm text-[var(--muted)]">
-                  <LoaderCircle aria-hidden="true" className="h-4 w-4 animate-spin" />
-                  Loading admin data...
-                </div>
-              ) : null}
-
-              {adminData ? (
-                <div className="grid gap-5">
-                  <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
-                      <div className="text-sm text-[var(--muted)]">Users</div>
-                      <div className="mt-2 text-3xl font-semibold">
-                        {adminData.users.length}
-                      </div>
-                    </div>
-                    <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
-                      <div className="text-sm text-[var(--muted)]">Payments</div>
-                      <div className="mt-2 text-3xl font-semibold">
-                        {adminData.payments.length}
-                      </div>
-                    </div>
-                    <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
-                      <div className="text-sm text-[var(--muted)]">Paid amount</div>
-                      <div className="mt-2 text-3xl font-semibold">
-                        {formatMoney(totalPaidAmount, "INR")}
-                      </div>
-                    </div>
-                  </div>
-
-                  <section className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
-                    <div className="mb-4 flex items-center gap-2">
-                      <UserRound aria-hidden="true" className="h-4 w-4 text-pink-200" />
-                      <h2 className="text-lg font-semibold">Users</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[760px] text-left text-sm">
-                        <thead className="border-b border-white/10 text-xs uppercase text-[var(--muted)]">
-                          <tr>
-                            <th className="py-3 pr-4 font-semibold">Name</th>
-                            <th className="py-3 pr-4 font-semibold">Email</th>
-                            <th className="py-3 pr-4 font-semibold">Verified</th>
-                            <th className="py-3 pr-4 font-semibold">Created</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/7">
-                          {adminData.users.map((adminUser) => (
-                            <tr key={adminUser.id}>
-                              <td className="py-3 pr-4 text-pink-50">
-                                {adminUser.name || "No name"}
-                              </td>
-                              <td className="py-3 pr-4 text-[var(--muted)]">
-                                {adminUser.email}
-                              </td>
-                              <td className="py-3 pr-4">
-                                <span
-                                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                    adminUser.emailVerified
-                                      ? "bg-emerald-500/12 text-emerald-200"
-                                      : "bg-yellow-500/12 text-yellow-100"
-                                  }`}
-                                >
-                                  {adminUser.emailVerified ? "Yes" : "No"}
-                                </span>
-                              </td>
-                              <td className="py-3 pr-4 text-[var(--muted)]">
-                                {formatDate(adminUser.createdAt)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
-
-                  <section className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
-                    <div className="mb-4 flex items-center gap-2">
-                      <CreditCard aria-hidden="true" className="h-4 w-4 text-pink-200" />
-                      <h2 className="text-lg font-semibold">Payments</h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[980px] text-left text-sm">
-                        <thead className="border-b border-white/10 text-xs uppercase text-[var(--muted)]">
-                          <tr>
-                            <th className="py-3 pr-4 font-semibold">User</th>
-                            <th className="py-3 pr-4 font-semibold">Plan</th>
-                            <th className="py-3 pr-4 font-semibold">Amount</th>
-                            <th className="py-3 pr-4 font-semibold">Status</th>
-                            <th className="py-3 pr-4 font-semibold">Payment ID</th>
-                            <th className="py-3 pr-4 font-semibold">Created</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/7">
-                          {adminData.payments.map((payment) => (
-                            <tr key={payment.id}>
-                              <td className="py-3 pr-4">
-                                <div className="text-pink-50">
-                                  {payment.userName || "No name"}
-                                </div>
-                                <div className="text-xs text-[var(--muted)]">
-                                  {payment.userEmail || payment.userId}
-                                </div>
-                              </td>
-                              <td className="py-3 pr-4 text-pink-50">
-                                {payment.plan}
-                              </td>
-                              <td className="py-3 pr-4 text-pink-50">
-                                {formatMoney(payment.amount, payment.currency)}
-                              </td>
-                              <td className="py-3 pr-4">
-                                <span className="rounded-full bg-white/[0.06] px-3 py-1 text-xs font-semibold text-pink-100">
-                                  {payment.status}
-                                </span>
-                              </td>
-                              <td className="max-w-48 truncate py-3 pr-4 text-[var(--muted)]">
-                                {payment.providerPaymentId || payment.providerOrderId}
-                              </td>
-                              <td className="py-3 pr-4 text-[var(--muted)]">
-                                {formatDate(payment.createdAt)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </section>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        ) : (
-          <>
         <Conversation ref={conversationRef} className="px-4">
           <ConversationContent className="max-w-3xl pb-36 pt-8">
           {messages.length === 0 ? (
@@ -1635,8 +1374,6 @@ export default function Page() {
           </PromptInputFooter>
         </PromptInput>
       </footer>
-          </>
-        )}
       </section>
     </main>
   );
