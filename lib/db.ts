@@ -33,6 +33,30 @@ export type StoredChatMessage = {
 
 export type PaymentStatus = "created" | "paid" | "failed";
 
+export type AdminUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  emailVerified: boolean;
+  createdAt: string;
+};
+
+export type AdminPayment = {
+  id: number;
+  userId: string;
+  userEmail: string | null;
+  userName: string | null;
+  provider: string;
+  plan: string;
+  providerOrderId: string;
+  providerPaymentId: string | null;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const databaseUrl = process.env.DATABASE_URL;
 const sql = databaseUrl ? neon(databaseUrl) : null;
 
@@ -570,4 +594,55 @@ export async function updatePaymentRecord({
         }
       | undefined) ?? null
   );
+}
+
+export async function getAdminUsers() {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT
+      id,
+      email,
+      name,
+      email_verified_at IS NOT NULL AS "emailVerified",
+      created_at AS "createdAt"
+    FROM users
+    ORDER BY created_at DESC
+  `;
+
+  return rows as AdminUser[];
+}
+
+export async function getAdminPayments() {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT
+      payments.id,
+      payments.user_id AS "userId",
+      users.email AS "userEmail",
+      users.name AS "userName",
+      payments.provider,
+      payments.plan,
+      payments.provider_order_id AS "providerOrderId",
+      payments.provider_payment_id AS "providerPaymentId",
+      payments.amount,
+      payments.currency,
+      payments.status,
+      payments.created_at AS "createdAt",
+      payments.updated_at AS "updatedAt"
+    FROM payments
+    LEFT JOIN users ON users.id = payments.user_id
+    ORDER BY payments.created_at DESC
+  `;
+
+  return rows as AdminPayment[];
 }
