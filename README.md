@@ -41,7 +41,8 @@ Open [http://localhost:3000](http://localhost:3000).
 
 `DATABASE_URL` is optional for local development. When it is present, chat messages are saved to a `chat_messages` table that the app creates automatically.
 `AUTH_SECRET` signs login sessions. Use a long random value in production.
-`ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_AUTH_SECRET` protect the separate `/admin` console. These admin credentials are separate from customer accounts.
+`ADMIN_USERNAME` and `ADMIN_PASSWORD` create the first admin account for the separate `/admin` console. Admin accounts are stored separately from customer accounts, and signed-in admins can create additional admin users from `/admin`.
+`ADMIN_AUTH_SECRET` signs admin sessions. Use a long random value in production.
 `GMAIL_USER`, `GMAIL_APP_PASSWORD`, and `EMAIL_FROM` send signup verification emails through Gmail SMTP. Use a Gmail App Password, not your normal Gmail password.
 Razorpay should be configured with test-mode keys while you are trying sandbox payments. `RAZORPAY_PRO_AMOUNT` is in paise, so `49900` means ₹499.
 

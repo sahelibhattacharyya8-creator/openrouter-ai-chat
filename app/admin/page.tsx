@@ -6,6 +6,7 @@ import {
   LoaderCircle,
   LogOut,
   ShieldCheck,
+  UserPlus,
   UserRound,
 } from "lucide-react";
 
@@ -33,19 +34,36 @@ type AdminPayment = {
   updatedAt: string;
 };
 
+type AdminAccount = {
+  id: string;
+  username: string;
+  name: string | null;
+  createdAt: string;
+};
+
 type AdminData = {
-  admin?: { username: string };
+  admin?: AdminAccount;
   users: AdminUser[];
   payments: AdminPayment[];
+  admins: AdminAccount[];
 };
+
+type AdminTab = "users" | "payments" | "admins";
 
 export default function AdminPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [newAdminName, setNewAdminName] = useState("");
+  const [newAdminUsername, setNewAdminUsername] = useState("");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
   const [data, setData] = useState<AdminData | null>(null);
   const [error, setError] = useState("");
+  const [adminCreateError, setAdminCreateError] = useState("");
+  const [adminCreateSuccess, setAdminCreateSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
+  const [activeTab, setActiveTab] = useState<AdminTab>("users");
 
   const paidAmount = useMemo(
     () =>
@@ -118,6 +136,46 @@ export default function AdminPage() {
     setData(null);
     setUsername("");
     setPassword("");
+    setNewAdminName("");
+    setNewAdminUsername("");
+    setNewAdminPassword("");
+    setAdminCreateError("");
+    setAdminCreateSuccess("");
+  }
+
+  async function createAdmin(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setAdminCreateError("");
+    setAdminCreateSuccess("");
+    setIsCreatingAdmin(true);
+
+    try {
+      const response = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newAdminName,
+          username: newAdminUsername,
+          password: newAdminPassword,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setAdminCreateError(result.error ?? "Could not create admin user.");
+        return;
+      }
+
+      setAdminCreateSuccess("Admin user created.");
+      setNewAdminName("");
+      setNewAdminUsername("");
+      setNewAdminPassword("");
+      await loadAdminData();
+    } catch {
+      setAdminCreateError("Could not create admin user.");
+    } finally {
+      setIsCreatingAdmin(false);
+    }
   }
 
   function formatMoney(amount: number, currency: string) {
@@ -210,15 +268,43 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-3">
-              <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
+            <div className="grid gap-3 md:grid-cols-4">
+              <button
+                className={`rounded-[16px] border p-4 text-left transition ${
+                  activeTab === "users"
+                    ? "border-pink-300/40 bg-[#2a2030]"
+                    : "border-white/10 bg-[#211927]/80 hover:bg-[#2a2030]"
+                }`}
+                onClick={() => setActiveTab("users")}
+                type="button"
+              >
                 <div className="text-sm text-[#b7a9c0]">Users</div>
                 <div className="mt-2 text-3xl font-semibold">{data.users.length}</div>
-              </div>
-              <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
+              </button>
+              <button
+                className={`rounded-[16px] border p-4 text-left transition ${
+                  activeTab === "payments"
+                    ? "border-pink-300/40 bg-[#2a2030]"
+                    : "border-white/10 bg-[#211927]/80 hover:bg-[#2a2030]"
+                }`}
+                onClick={() => setActiveTab("payments")}
+                type="button"
+              >
                 <div className="text-sm text-[#b7a9c0]">Payments</div>
                 <div className="mt-2 text-3xl font-semibold">{data.payments.length}</div>
-              </div>
+              </button>
+              <button
+                className={`rounded-[16px] border p-4 text-left transition ${
+                  activeTab === "admins"
+                    ? "border-pink-300/40 bg-[#2a2030]"
+                    : "border-white/10 bg-[#211927]/80 hover:bg-[#2a2030]"
+                }`}
+                onClick={() => setActiveTab("admins")}
+                type="button"
+              >
+                <div className="text-sm text-[#b7a9c0]">Admin users</div>
+                <div className="mt-2 text-3xl font-semibold">{data.admins.length}</div>
+              </button>
               <div className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
                 <div className="text-sm text-[#b7a9c0]">Paid amount</div>
                 <div className="mt-2 text-3xl font-semibold">
@@ -227,6 +313,110 @@ export default function AdminPage() {
               </div>
             </div>
 
+            <div className="flex gap-2 overflow-x-auto border-b border-white/10">
+              {[
+                { id: "users", label: "Users", icon: UserRound },
+                { id: "payments", label: "Payments", icon: CreditCard },
+                { id: "admins", label: "Admin users", icon: UserPlus },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+
+                return (
+                  <button
+                    className={`inline-flex h-11 shrink-0 items-center gap-2 border-b-2 px-4 text-sm font-semibold transition ${
+                      isActive
+                        ? "border-pink-300 text-pink-100"
+                        : "border-transparent text-[#b7a9c0] hover:text-pink-100"
+                    }`}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as AdminTab)}
+                    type="button"
+                  >
+                    <Icon aria-hidden="true" className="h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {activeTab === "admins" ? (
+            <section className="grid gap-4 rounded-[16px] border border-white/10 bg-[#211927]/80 p-4 lg:grid-cols-[1fr_1.4fr]">
+              <div>
+                <div className="mb-4 flex items-center gap-2">
+                  <UserPlus aria-hidden="true" className="h-4 w-4 text-pink-200" />
+                  <h2 className="text-lg font-semibold">Admin users</h2>
+                </div>
+                <form className="grid gap-3" onSubmit={createAdmin}>
+                  <input
+                    className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                    onChange={(event) => setNewAdminName(event.target.value)}
+                    placeholder="Name"
+                    value={newAdminName}
+                  />
+                  <input
+                    autoComplete="username"
+                    className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                    onChange={(event) => setNewAdminUsername(event.target.value)}
+                    placeholder="Admin username"
+                    required
+                    value={newAdminUsername}
+                  />
+                  <input
+                    autoComplete="new-password"
+                    className="h-11 rounded-full border border-white/10 bg-[#120e16] px-4 text-sm text-white outline-none placeholder:text-[#7f7388] focus:border-pink-300/40"
+                    minLength={8}
+                    onChange={(event) => setNewAdminPassword(event.target.value)}
+                    placeholder="Temporary password"
+                    required
+                    type="password"
+                    value={newAdminPassword}
+                  />
+                  {adminCreateError ? (
+                    <p className="text-sm text-red-300">{adminCreateError}</p>
+                  ) : null}
+                  {adminCreateSuccess ? (
+                    <p className="text-sm text-emerald-200">{adminCreateSuccess}</p>
+                  ) : null}
+                  <button
+                    className="h-11 rounded-full bg-[#c21872] px-4 text-sm font-semibold text-white transition hover:bg-[#df2a8c] disabled:cursor-not-allowed disabled:opacity-60"
+                    disabled={isCreatingAdmin}
+                    type="submit"
+                  >
+                    {isCreatingAdmin ? "Creating..." : "Create admin user"}
+                  </button>
+                </form>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] text-left text-sm">
+                  <thead className="border-b border-white/10 text-xs uppercase text-[#b7a9c0]">
+                    <tr>
+                      <th className="py-3 pr-4 font-semibold">Name</th>
+                      <th className="py-3 pr-4 font-semibold">Username</th>
+                      <th className="py-3 pr-4 font-semibold">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/7">
+                    {data.admins.map((adminUser) => (
+                      <tr key={adminUser.id}>
+                        <td className="py-3 pr-4 text-pink-50">
+                          {adminUser.name || "No name"}
+                        </td>
+                        <td className="py-3 pr-4 text-[#b7a9c0]">
+                          {adminUser.username}
+                        </td>
+                        <td className="py-3 pr-4 text-[#b7a9c0]">
+                          {formatDate(adminUser.createdAt)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            ) : null}
+
+            {activeTab === "users" ? (
             <section className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
               <div className="mb-4 flex items-center gap-2">
                 <UserRound aria-hidden="true" className="h-4 w-4 text-pink-200" />
@@ -267,7 +457,9 @@ export default function AdminPage() {
                 </table>
               </div>
             </section>
+            ) : null}
 
+            {activeTab === "payments" ? (
             <section className="rounded-[16px] border border-white/10 bg-[#211927]/80 p-4">
               <div className="mb-4 flex items-center gap-2">
                 <CreditCard aria-hidden="true" className="h-4 w-4 text-pink-200" />
@@ -315,6 +507,7 @@ export default function AdminPage() {
                 </table>
               </div>
             </section>
+            ) : null}
           </div>
         )}
 

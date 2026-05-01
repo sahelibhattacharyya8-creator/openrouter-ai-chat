@@ -1,9 +1,18 @@
 import {
   createAdminSession,
   getAdminCredentials,
+  validateAdminLogin,
 } from "@/lib/admin-auth";
+import { isDatabaseConfigured } from "@/lib/db";
 
 export async function POST(req: Request) {
+  if (!isDatabaseConfigured()) {
+    return Response.json(
+      { error: "Database is not configured." },
+      { status: 500 },
+    );
+  }
+
   const { username, password } = await req.json();
   const credentials = getAdminCredentials();
 
@@ -14,17 +23,16 @@ export async function POST(req: Request) {
     );
   }
 
-  if (
-    username !== credentials.username ||
-    password !== credentials.password
-  ) {
+  const admin = await validateAdminLogin(username, password);
+
+  if (!admin) {
     return Response.json(
       { error: "Invalid admin username or password." },
       { status: 401 },
     );
   }
 
-  await createAdminSession(username);
+  await createAdminSession(admin);
 
-  return Response.json({ admin: { username } });
+  return Response.json({ admin });
 }

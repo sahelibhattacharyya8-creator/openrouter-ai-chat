@@ -1,5 +1,11 @@
 import { cookies } from "next/headers";
+import { compare, hash } from "bcryptjs";
 import { jwtVerify, SignJWT } from "jose";
+import {
+  createAdminAccount,
+  getAdminAccountById,
+  getAdminAccountByUsername,
+} from "@/lib/db";
 
 const adminCookie = "openrouter_admin_session";
 
@@ -23,10 +29,54 @@ export function getAdminCredentials() {
   };
 }
 
-export async function createAdminSession(username: string) {
-  const token = await new SignJWT({ role: "admin" })
+export async function ensureConfiguredAdminAccount() {
+  const credentials = getAdminCredentials();
+
+  if (!credentials.username || !credentials.password) {
+    return null;
+  }
+
+  const existingAdmin = await getAdminAccountByUsername(credentials.username);
+
+  if (existingAdmin) {
+    return existingAdmin;
+  }
+
+  const passwordHash = await hash(credentials.password, 12);
+
+  return createAdminAccount({
+    username: credentials.username,
+    name: "Primary admin",
+    passwordHash,
+  });
+}
+
+export async function validateAdminLogin(username: string, password: string) {
+  await ensureConfiguredAdminAccount();
+  const admin = await getAdminAccountByUsername(username);
+
+  if (!admin) {
+    return null;
+  }
+
+  const passwordMatches = await compare(password, admin.passwordHash);
+
+  if (!passwordMatches) {
+    return null;
+  }
+
+  return {
+    id: admin.id,
+    username: admin.username,
+    name: admin.name,
+    createdAt: admin.createdAt,
+  };
+}
+
+export async function createAdminSession(admin: { id: string; username: string }) {
+  const token = await new SignJWT({ role: "admin", username: admin.username })
     .setProtectedHeader({ alg: "HS256" })
-    .setSubject(username)
+    .setSubject(admin.id)
     .setIssuedAt()
     .setExpirationTime("8h")
     .sign(getSecret());
@@ -61,7 +111,7 @@ export async function getCurrentAdmin() {
       return null;
     }
 
-    return { username: payload.sub };
+    return await getAdminAccountById(payload.sub);
   } catch {
     return null;
   }

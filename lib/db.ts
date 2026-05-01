@@ -41,6 +41,17 @@ export type AdminUser = {
   createdAt: string;
 };
 
+export type AdminAccount = {
+  id: string;
+  username: string;
+  name: string | null;
+  createdAt: string;
+};
+
+export type AdminAccountWithPassword = AdminAccount & {
+  passwordHash: string;
+};
+
 export type AdminPayment = {
   id: number;
   userId: string;
@@ -155,6 +166,16 @@ async function ensureSchema() {
         status TEXT NOT NULL,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        name TEXT,
+        password_hash TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `;
   })();
@@ -645,4 +666,101 @@ export async function getAdminPayments() {
   `;
 
   return rows as AdminPayment[];
+}
+
+export async function getAdminAccounts() {
+  if (!sql) {
+    return [];
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT
+      id,
+      username,
+      name,
+      created_at AS "createdAt"
+    FROM admin_users
+    ORDER BY created_at DESC
+  `;
+
+  return rows as AdminAccount[];
+}
+
+export async function getAdminAccountByUsername(username: string) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT
+      id,
+      username,
+      name,
+      password_hash AS "passwordHash",
+      created_at AS "createdAt"
+    FROM admin_users
+    WHERE username = ${username.trim().toLowerCase()}
+    LIMIT 1
+  `;
+
+  return (rows[0] as AdminAccountWithPassword | undefined) ?? null;
+}
+
+export async function getAdminAccountById(id: string) {
+  if (!sql) {
+    return null;
+  }
+
+  await ensureSchema();
+
+  const rows = await sql`
+    SELECT
+      id,
+      username,
+      name,
+      created_at AS "createdAt"
+    FROM admin_users
+    WHERE id = ${id}
+    LIMIT 1
+  `;
+
+  return (rows[0] as AdminAccount | undefined) ?? null;
+}
+
+export async function createAdminAccount({
+  username,
+  name,
+  passwordHash,
+}: {
+  username: string;
+  name?: string;
+  passwordHash: string;
+}) {
+  if (!sql) {
+    throw new Error("Database is not configured.");
+  }
+
+  await ensureSchema();
+
+  const id = crypto.randomUUID();
+  const rows = await sql`
+    INSERT INTO admin_users (id, username, name, password_hash)
+    VALUES (
+      ${id},
+      ${username.trim().toLowerCase()},
+      ${name?.trim() || null},
+      ${passwordHash}
+    )
+    RETURNING
+      id,
+      username,
+      name,
+      created_at AS "createdAt"
+  `;
+
+  return rows[0] as AdminAccount;
 }
